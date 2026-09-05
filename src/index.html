@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>templateZen</title>
-    <meta name="description" content="Template reutilizável de cabeçalho, rodapé, temas e CI/CD para começar novos projetos web a partir de uma base pronta e acessível.">
+    <title>LogZen</title>
+    <meta name="description" content="LogZen: registre hábitos, exercícios, humor e mais em segundos, com todos os dados salvos só no seu celular.">
 
     <!-- Compartilhamento (Open Graph / Twitter). O %SITE_URL% é substituído
          pelo build.mjs pela URL real (env/variável SITE_URL) — deixando og:url
@@ -12,13 +12,13 @@
     <link rel="canonical" href="%SITE_URL%/">
     <meta property="og:type" content="website">
     <meta property="og:url" content="%SITE_URL%/">
-    <meta property="og:title" content="templateZen">
-    <meta property="og:description" content="Base pronta e acessível (cabeçalho, rodapé, temas e CI/CD) para novos projetos web.">
+    <meta property="og:title" content="LogZen">
+    <meta property="og:description" content="Registre hábitos, exercícios, humor e mais em segundos — dados salvos só no seu celular.">
     <meta property="og:image" content="%SITE_URL%/logo.svg">
     <meta property="og:locale" content="pt_BR">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="templateZen">
-    <meta name="twitter:description" content="Base pronta e acessível (cabeçalho, rodapé, temas e CI/CD) para novos projetos web.">
+    <meta name="twitter:title" content="LogZen">
+    <meta name="twitter:description" content="Registre hábitos, exercícios, humor e mais em segundos — dados salvos só no seu celular.">
     <meta name="twitter:image" content="%SITE_URL%/logo.svg">
 
     <!-- Favicon: sempre o logo do projeto, em SVG. Troque src/logo.svg pela
@@ -62,7 +62,7 @@
                     <i aria-hidden="true" class="fa-solid fa-star"></i>
                 </div>
                 <div class="flex items-center gap-2 overflow-hidden">
-                    <h1 id="headerAppName" class="font-bold text-white leading-none whitespace-nowrap">TemplateZen</h1>
+                    <h1 id="headerAppName" class="font-bold text-white leading-none whitespace-nowrap">LogZen</h1>
                     <span class="text-xl text-white/30 dark:text-gray-700 font-light hidden">|</span>
                     <span id="headerSigla" class="font-bold text-white/90 dark:text-accent-400 leading-none whitespace-nowrap hidden"></span>
                     <!-- Nome definido pelo usuário na aba Configurações (| nome) -->
@@ -86,8 +86,8 @@
         <!-- Abas de navegação: adicione/remova .tab-btn e o .tab-panel correspondente -->
         <nav class="bg-white dark:bg-gray-800 border-t border-brand-700/20 dark:border-gray-700 px-2" role="tablist" aria-label="Seções">
             <div class="max-w-5xl mx-auto flex gap-1 overflow-x-auto">
-                <button id="tab-inicio-btn" aria-controls="tab-inicio" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="true" data-tab="inicio">
-                    <i aria-hidden="true" class="fa-solid fa-house mr-1"></i> Início
+                <button id="tab-hoje-btn" aria-controls="tab-hoje" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="true" data-tab="hoje">
+                    <i aria-hidden="true" class="fa-solid fa-calendar-day mr-1"></i> Hoje
                 </button>
             </div>
         </nav>
@@ -95,57 +95,27 @@
 
     <!-- ============================ CONTEÚDO ============================ -->
     <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
-        <div id="tab-inicio" class="tab-panel" role="tabpanel" aria-labelledby="tab-inicio-btn" tabindex="0">
-            <div class="max-w-3xl mx-auto space-y-6">
-                <div class="bg-brand-50 dark:bg-gray-800 border border-brand-100 dark:border-gray-700 rounded-lg p-5">
-                    <p class="font-semibold text-brand-800 dark:text-accent-400 mb-1">
-                        <i aria-hidden="true" class="fa-solid fa-circle-info mr-1"></i> Este site é um modelo (template)
-                    </p>
-                    <p>
-                        O que você está vendo — cabeçalho, abas, rodapé com tema claro/escuro,
-                        alto contraste e ajuste de fonte — não é o produto final de um projeto:
-                        é o ponto de partida reutilizável (<strong>templateZen</strong>) para
-                        montar novas aplicações web com essa mesma base pronta. Substitua este
-                        texto e as abas ao lado pelo conteúdo real do seu projeto.
-                    </p>
+        <div id="tab-hoje" class="tab-panel" role="tabpanel" aria-labelledby="tab-hoje-btn" tabindex="0">
+            <div class="max-w-2xl mx-auto space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-lg font-bold capitalize" id="hojeDataLabel">Hoje</h2>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="logzenExportBtn" title="Exportar dados (JSON)" aria-label="Exportar dados (JSON)"
+                            class="w-9 h-9 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center">
+                            <i aria-hidden="true" class="fa-solid fa-download"></i>
+                        </button>
+                        <label for="logzenImportInput" title="Importar dados (JSON)" aria-label="Importar dados (JSON)"
+                            class="w-9 h-9 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center cursor-pointer">
+                            <i aria-hidden="true" class="fa-solid fa-upload"></i>
+                        </label>
+                        <input type="file" id="logzenImportInput" accept="application/json" class="sr-only">
+                    </div>
                 </div>
-
-                <div>
-                    <h2 class="text-lg font-bold mb-2">Como usar este repositório como modelo no GitHub</h2>
-                    <ol class="list-decimal list-inside space-y-2">
-                        <li>
-                            No repositório do GitHub, abra <strong>Settings</strong> e marque a
-                            opção <strong>Template repository</strong> (só precisa ser feito uma
-                            vez, pelo dono do repositório).
-                        </li>
-                        <li>
-                            Com isso ativado, o botão verde <strong>Use this template</strong>
-                            passa a aparecer no topo da página do repositório, ao lado de
-                            "Code".
-                        </li>
-                        <li>
-                            Clique em <strong>Use this template → Create a new repository</strong>,
-                            escolha o nome do novo projeto e crie-o — você recebe uma cópia
-                            limpa (sem o histórico de commits deste repositório).
-                        </li>
-                        <li>
-                            Clone o novo repositório e edite <code>src/js/config.js</code> com os
-                            dados do seu projeto (nome, autor, links, licença).
-                        </li>
-                        <li>
-                            Configure a publicação automática via SSH seguindo o
-                            <code>DEPLOY.md</code>, e ajuste <code>CLAUDE.md</code>,
-                            <code>CHANGELOG.md</code> e <code>VERSION</code> conforme o projeto
-                            evoluir.
-                        </li>
-                    </ol>
-                </div>
-
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Prefere não usar "Use this template"? Também funciona clonar o repositório
-                    normalmente ou baixar o ZIP — o <code>README.md</code> tem o passo a passo
-                    completo de customização.
+                    Toque para abrir cada categoria, registre e feche — tudo fica salvo
+                    automaticamente só neste navegador, sem enviar nada para nenhum servidor.
                 </p>
+                <div id="hojeRoot" class="space-y-3"></div>
             </div>
         </div>
         <div id="tab-config" class="tab-panel" role="tabpanel" aria-labelledby="headerConfigBtn" tabindex="0" hidden>
@@ -210,5 +180,10 @@
     <script src="js/config.js"></script>
     <script src="js/chrome.js"></script>
     <script src="js/layout.js"></script>
+    <!-- Dados do LogZen (100% local — ver issue #1): catálogo de itens,
+         armazenamento e renderização da tela "Hoje". -->
+    <script src="js/logzen-items.js"></script>
+    <script src="js/logzen-data.js"></script>
+    <script src="js/logzen-app.js"></script>
 </body>
 </html>

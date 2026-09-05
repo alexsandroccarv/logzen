@@ -7,6 +7,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Added
+- Rebranding do template para **LogZen** (`node scripts/setup.mjs`): nome,
+  repositório, autor, licença e cor da marca (issue #1).
+- Tela "Hoje": registro diário de hábitos em 5 categorias (Exercícios,
+  Vícios, Hábitos, Ânimo/Saúde mental, Atividade sexual), cada uma com o
+  tipo de input adequado (contador, contador invertido com streak,
+  checkbox, escala de estrelas, tags) em blocos retráteis. Dados
+  armazenados 100% localmente no navegador (`localStorage`), sem backend,
+  com exportação/importação em JSON (issue #1).
+
 ## [0.0.1] - Base inicial
 
 ### Adicionado
