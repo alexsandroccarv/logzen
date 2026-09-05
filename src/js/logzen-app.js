@@ -1,7 +1,9 @@
 /* ==========================================================================
-   LogZen — Tela "Hoje": renderiza as categorias/itens (logzen-items.js) a
-   partir dos dados salvos (logzen-data.js) e liga os inputs (contador,
-   contador-inverso, checkbox, escala, tags) via delegação de eventos.
+   LogZen — Tela "Hoje": renderiza o catálogo (logzen-catalog.js: itens
+   padrão + customizados, issue #2) a partir dos dados salvos
+   (logzen-data.js) e liga os inputs (contador, contador-inverso, checkbox,
+   escala, tags), o formulário de novo item por categoria e a nota do dia,
+   via delegação de eventos.
    ========================================================================== */
 (function () {
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
@@ -17,10 +19,25 @@
         return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    function debounce(fn, wait) {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+    }
+
+    // Botão de remover (só para itens customizados — issue #2). Os itens do
+    // catálogo padrão (logzen-items.js) não podem ser removidos por aqui.
+    function trashBtn(item) {
+        if (!item.custom) return '';
+        return `<button type="button" data-action="remove-item" aria-label="Remover ${escapeHtml(item.nome)}"
+            class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+            <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
+        </button>`;
+    }
+
     function renderContador(cat, item, dateKey) {
         const valor = window.LogZenData.getItemValue(dateKey, cat.id, item.id, 0);
         return `
-        <div class="flex items-center justify-between gap-3 py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador">
+        <div class="flex items-center justify-between gap-3 py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador" data-nome="${escapeHtml(item.nome)}">
             <span class="font-medium">${escapeHtml(item.nome)}<span class="block text-xs font-normal text-gray-500 dark:text-gray-400">${escapeHtml(item.unidade || '')}</span></span>
             <div class="flex items-center gap-2 shrink-0">
                 <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold">−</button>
@@ -28,6 +45,7 @@
                 <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold">+</button>
                 ${item.passoRapido ? `<button type="button" data-action="quick" data-amount="${item.passoRapido}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+${item.passoRapido}</button>` : ''}
                 ${item.passoLitro ? `<button type="button" data-action="quick" data-amount="${item.passoLitro}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+1L</button>` : ''}
+                ${trashBtn(item)}
             </div>
         </div>`;
     }
@@ -43,6 +61,7 @@
                     <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-current/40 hover:bg-black/5 dark:hover:bg-white/10 font-bold">−</button>
                     <span data-value class="w-10 text-center font-mono text-lg tabular-nums">${valor}</span>
                     <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-current/40 hover:bg-black/5 dark:hover:bg-white/10 font-bold">+</button>
+                    ${trashBtn(item)}
                 </div>
             </div>
             <p data-streak class="text-xs mt-2 flex items-center gap-1"><i aria-hidden="true" class="fa-solid fa-fire"></i> ${streak} dia(s) sem "${escapeHtml(item.nome)}"</p>
@@ -52,10 +71,13 @@
     function renderCheckbox(cat, item, dateKey) {
         const marcado = !!window.LogZenData.getItemValue(dateKey, cat.id, item.id, false);
         return `
-        <label class="flex items-center justify-between gap-3 py-3 cursor-pointer" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="checkbox">
-            <span class="font-medium">${escapeHtml(item.nome)}</span>
-            <input type="checkbox" data-action="checkbox" class="w-5 h-5 accent-brand-600 dark:accent-accent-500" ${marcado ? 'checked' : ''} aria-label="${escapeHtml(item.nome)}">
-        </label>`;
+        <div class="flex items-center justify-between gap-3 py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="checkbox" data-nome="${escapeHtml(item.nome)}">
+            <label class="flex items-center gap-3 flex-1 cursor-pointer">
+                <input type="checkbox" data-action="checkbox" class="w-5 h-5 accent-brand-600 dark:accent-accent-500" ${marcado ? 'checked' : ''} aria-label="${escapeHtml(item.nome)}">
+                <span class="font-medium">${escapeHtml(item.nome)}</span>
+            </label>
+            ${trashBtn(item)}
+        </div>`;
     }
 
     function renderEscala(cat, item, dateKey) {
@@ -66,8 +88,11 @@
                 <i aria-hidden="true" class="fa-solid fa-star"></i>
             </button>`).join('');
         return `
-        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="escala">
-            <p class="font-medium mb-1">${escapeHtml(item.nome)}</p>
+        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="escala" data-nome="${escapeHtml(item.nome)}">
+            <div class="flex items-center justify-between gap-3 mb-1">
+                <p class="font-medium m-0">${escapeHtml(item.nome)}</p>
+                ${trashBtn(item)}
+            </div>
             <div class="flex gap-1" role="radiogroup" aria-label="${escapeHtml(item.nome)}">${estrelas}</div>
         </div>`;
     }
@@ -80,8 +105,11 @@
                 class="px-3 py-1 rounded-full border text-sm ${ativo ? 'bg-brand-600 dark:bg-accent-600 text-white border-brand-600 dark:border-accent-600' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'}">${escapeHtml(tag)}</button>`;
         }).join('');
         return `
-        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="tags">
-            <p class="font-medium mb-2">${escapeHtml(item.nome)}</p>
+        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="tags" data-nome="${escapeHtml(item.nome)}">
+            <div class="flex items-center justify-between gap-3 mb-2">
+                <p class="font-medium m-0">${escapeHtml(item.nome)}</p>
+                ${trashBtn(item)}
+            </div>
             <div class="flex flex-wrap gap-2">${pills}</div>
         </div>`;
     }
@@ -94,6 +122,52 @@
         'tags': renderTags,
     };
 
+    const TIPOS_LABEL = {
+        'contador': 'Contador (quanto mais, melhor)',
+        'contador-inverso': 'Contador invertido (quanto menos, melhor)',
+        'checkbox': 'Sim/Não',
+        'escala': 'Escala de 1 a 5 estrelas',
+        'tags': 'Tags (múltipla escolha)',
+    };
+
+    function renderFormularioNovoItem(cat) {
+        const opcoesTipo = Object.entries(TIPOS_LABEL)
+            .map(([valor, label]) => `<option value="${valor}">${escapeHtml(label)}</option>`).join('');
+        return `
+        <div class="px-4 pb-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" data-action="toggle-add-form" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1 py-1">
+                <i aria-hidden="true" class="fa-solid fa-plus"></i> Adicionar item
+            </button>
+            <form data-add-item-form data-cat="${cat.id}" hidden class="space-y-2 pt-2">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Nome</label>
+                    <input type="text" data-field="nome" required maxlength="60" placeholder="ex.: Corrida"
+                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Tipo de input</label>
+                    <select data-field="tipo" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        ${opcoesTipo}
+                    </select>
+                </div>
+                <div data-field-group="unidade">
+                    <label class="block text-xs font-medium mb-1">Unidade (opcional)</label>
+                    <input type="text" data-field="unidade" maxlength="30" placeholder="ex.: reps, km, copos"
+                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+                <div data-field-group="opcoes" hidden>
+                    <label class="block text-xs font-medium mb-1">Opções (separadas por vírgula)</label>
+                    <input type="text" data-field="opcoes" placeholder="ex.: Ansiedade, Foco alto"
+                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Adicionar</button>
+                    <button type="button" data-action="cancel-add-form" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+                </div>
+            </form>
+        </div>`;
+    }
+
     function renderCategoria(cat, dateKey, aberta) {
         const itensHtml = cat.itens.map((item) => (RENDERERS[item.tipo] || (() => ''))(cat, item, dateKey)).join('');
         return `
@@ -104,11 +178,39 @@
                 <span class="text-xs font-normal text-gray-500 dark:text-gray-400">${escapeHtml(cat.descricao)}</span>
             </summary>
             <div class="px-4 divide-y divide-gray-100 dark:divide-gray-700">${itensHtml}</div>
+            ${renderFormularioNovoItem(cat)}
+        </details>`;
+    }
+
+    function renderNota(dateKey) {
+        const valor = window.LogZenData.getNota(dateKey);
+        return `
+        <details class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" ${valor ? 'open' : ''}>
+            <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
+                <i aria-hidden="true" class="fa-solid fa-note-sticky text-brand-600 dark:text-accent-400"></i>
+                Nota do dia
+                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">Observação livre, opcional.</span>
+            </summary>
+            <div class="p-4">
+                <textarea data-nota rows="3" maxlength="500" placeholder="Como foi o dia?"
+                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(valor)}</textarea>
+            </div>
         </details>`;
     }
 
     function render(root, dateKey) {
-        root.innerHTML = window.LOGZEN_CATEGORIES.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('');
+        const categorias = window.LogZenCatalog.getCategorias();
+        root.innerHTML = renderNota(dateKey) + categorias.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('');
+    }
+
+    // Recria o HTML (após adicionar/remover item) preservando quais blocos
+    // (nota + categorias, sempre nesta ordem) estavam abertos/fechados.
+    function reRenderPreservingState(root, dateKey) {
+        const abertos = Array.from(root.querySelectorAll(':scope > details')).map((d) => d.open);
+        render(root, dateKey);
+        Array.from(root.querySelectorAll(':scope > details')).forEach((d, i) => {
+            if (abertos[i] !== undefined) d.open = abertos[i];
+        });
     }
 
     function formatarDataExtenso(dateKey) {
@@ -116,8 +218,50 @@
         return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
     }
 
+    // Mostra só o campo relevante ao tipo escolhido no formulário de novo item.
+    function syncFieldGroups(form) {
+        const tipo = form.querySelector('[data-field="tipo"]').value;
+        const unidadeGroup = form.querySelector('[data-field-group="unidade"]');
+        const opcoesGroup = form.querySelector('[data-field-group="opcoes"]');
+        if (unidadeGroup) unidadeGroup.hidden = !(tipo === 'contador' || tipo === 'contador-inverso');
+        if (opcoesGroup) opcoesGroup.hidden = tipo !== 'tags';
+    }
+
+    const salvarNotaDebounced = debounce((dateKey, valor) => window.LogZenData.setNota(dateKey, valor), 400);
+
     function wire(root, dateKey) {
         root.addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('[data-action="toggle-add-form"]');
+            if (toggleBtn) {
+                const form = toggleBtn.nextElementSibling;
+                form.hidden = !form.hidden;
+                if (!form.hidden) {
+                    syncFieldGroups(form);
+                    form.querySelector('[data-field="nome"]').focus();
+                }
+                return;
+            }
+
+            const cancelBtn = e.target.closest('[data-action="cancel-add-form"]');
+            if (cancelBtn) {
+                const form = cancelBtn.closest('form[data-add-item-form]');
+                form.reset();
+                syncFieldGroups(form);
+                form.hidden = true;
+                return;
+            }
+
+            const removeBtn = e.target.closest('[data-action="remove-item"]');
+            if (removeBtn) {
+                const row = removeBtn.closest('[data-row]');
+                if (!row) return;
+                const nome = row.dataset.nome || '';
+                if (!window.confirm(`Remover "${nome}"? Os registros já salvos para este item continuam guardados, só ele deixa de aparecer na tela.`)) return;
+                window.LogZenCatalog.removeCustomItem(row.dataset.cat, row.dataset.item);
+                reRenderPreservingState(root, dateKey);
+                return;
+            }
+
             const row = e.target.closest('[data-row]');
             if (!row) return;
             const { cat, item, tipo } = row.dataset;
@@ -171,9 +315,41 @@
         });
 
         root.addEventListener('change', (e) => {
+            if (e.target.matches('[data-field="tipo"]')) {
+                syncFieldGroups(e.target.closest('form[data-add-item-form]'));
+                return;
+            }
             const row = e.target.closest('[data-row][data-tipo="checkbox"]');
-            if (!row || e.target.dataset.action !== 'checkbox') return;
-            window.LogZenData.setItemValue(dateKey, row.dataset.cat, row.dataset.item, e.target.checked);
+            if (row && e.target.dataset.action === 'checkbox') {
+                window.LogZenData.setItemValue(dateKey, row.dataset.cat, row.dataset.item, e.target.checked);
+            }
+        });
+
+        root.addEventListener('input', (e) => {
+            if (e.target.matches('[data-nota]')) salvarNotaDebounced(dateKey, e.target.value);
+        });
+
+        root.addEventListener('submit', (e) => {
+            const form = e.target.closest('form[data-add-item-form]');
+            if (!form) return;
+            e.preventDefault();
+            const nome = form.querySelector('[data-field="nome"]').value.trim();
+            if (!nome) return;
+            const tipo = form.querySelector('[data-field="tipo"]').value;
+            const dados = { nome, tipo };
+            if (tipo === 'contador' || tipo === 'contador-inverso') {
+                const unidade = form.querySelector('[data-field="unidade"]').value.trim();
+                if (unidade) dados.unidade = unidade;
+            }
+            if (tipo === 'tags') {
+                dados.opcoes = form.querySelector('[data-field="opcoes"]').value.split(',').map((s) => s.trim()).filter(Boolean);
+                if (dados.opcoes.length === 0) {
+                    window.alert('Informe ao menos uma opção de tag, separadas por vírgula.');
+                    return;
+                }
+            }
+            window.LogZenCatalog.addCustomItem(form.dataset.cat, dados);
+            reRenderPreservingState(root, dateKey);
         });
     }
 

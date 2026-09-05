@@ -70,6 +70,17 @@ window.LogZenData = (function () {
         return streak;
     }
 
+    function getNota(dateKey) {
+        return getEntry(dateKey).nota || '';
+    }
+
+    function setNota(dateKey, texto) {
+        const all = readAll();
+        if (!all[dateKey]) all[dateKey] = {};
+        all[dateKey].nota = texto;
+        writeAll(all);
+    }
+
     function exportJSON() {
         return JSON.stringify(readAll(), null, 2);
     }
@@ -79,5 +90,5 @@ window.LogZenData = (function () {
         if (parsed && typeof parsed === 'object') writeAll(parsed);
     }
 
-    return { todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado, exportJSON, importJSON };
+    return { todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado, getNota, setNota, exportJSON, importJSON };
 })();

@@ -16,6 +16,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   checkbox, escala de estrelas, tags) em blocos retráteis. Dados
   armazenados 100% localmente no navegador (`localStorage`), sem backend,
   com exportação/importação em JSON (issue #1).
+- Itens customizados: cada categoria da tela "Hoje" ganhou um formulário
+  "Adicionar item" (nome + tipo de input — contador, contador invertido,
+  sim/não, escala ou tags — e campos condicionais de unidade/opções);
+  itens customizados podem ser removidos (os do catálogo padrão não).
+  Nota do dia: campo de texto livre e opcional no lançamento diário
+  (issue #2).
 
 ## [0.0.1] - Base inicial
 
