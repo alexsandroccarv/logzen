@@ -8,6 +8,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Objetivos do dia: regra 1-3-5 (lista fechada, estilo Bullet Journal) —
+  a cor de cada objetivo vem da sua **posição** na lista (1ª = vermelho
+  claro/urgente, 2ª–4ª = amarelo claro, 5ª–9ª = verde clarinho, 10ª em
+  diante = cinza claro), e arrastar para reordenar é como se muda a
+  prioridade. Objetivos não concluídos migram automaticamente para o
+  dia seguinte assim que o app é aberto num dia novo — o original fica
+  marcado "Migrado" no dia de origem (congelado, só histórico), sem
+  migrar de novo. Cada objetivo ganhou nota curta opcional, no mesmo
+  padrão dos demais itens (ícone de lápis, fechada por padrão) (issue
+  #12).
 - Rebranding do template para **LogZen** (`node scripts/setup.mjs`): nome,
   repositório, autor, licença e cor da marca (issue #1).
 - Tela "Hoje": registro diário de hábitos em 5 categorias (Exercícios,

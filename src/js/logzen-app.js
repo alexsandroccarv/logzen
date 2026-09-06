@@ -231,33 +231,98 @@
         </details>`;
     }
 
-    // Objetivos do dia (issue #9): tarefas ad-hoc, digitadas na hora — não
-    // fazem parte do catálogo de hábitos, ficam só neste bloco no início.
-    function renderObjetivoItem(o) {
+    // Objetivos do dia (issues #9/#12): tarefas ad-hoc, digitadas na hora —
+    // não fazem parte do catálogo de hábitos, ficam só neste bloco no
+    // início. Regra 1-3-5 (lista fechada, estilo Bullet Journal): a COR vem
+    // da POSIÇÃO na lista, não de um campo separado de prioridade — é por
+    // isso que a lista é arrastável (arrastar É como se muda a prioridade).
+    // 1ª = urgente (vermelho), 2ª–4ª = médias (amarelo), 5ª–9ª = pequenas
+    // (verde), 10ª em diante = sem prioridade fixa (cinza, só um sinal
+    // visual — não bloqueia adicionar mais).
+    const CORES_OBJETIVO = [
+        'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900',
+        'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900',
+        'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900',
+        'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700',
+    ];
+    function corObjetivoPorPosicao(indice) {
+        if (indice === 0) return CORES_OBJETIVO[0];
+        if (indice <= 3) return CORES_OBJETIVO[1];
+        if (indice <= 8) return CORES_OBJETIVO[2];
+        return CORES_OBJETIVO[3];
+    }
+
+    function notaBtnObjetivo(o, temNota) {
+        return notaBtn({ nome: o.texto }, temNota);
+    }
+
+    function notaBoxObjetivo(o, dateKey) {
+        const nota = window.LogZenData.getObjetivoNota(dateKey, o.id);
+        return `<div data-nota-wrap hidden class="pt-2">
+            <textarea data-item-nota rows="2" maxlength="300" placeholder="Nota sobre este objetivo (opcional)"
+                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(nota)}</textarea>
+        </div>`;
+    }
+
+    // Um objetivo já migrado fica congelado no dia de origem — só um
+    // registro histórico, sem checkbox/remover/arrastar.
+    function renderObjetivoMigrado(o) {
         return `
-        <li data-objetivo-item data-id="${o.id}" class="flex items-center gap-2 py-1.5">
-            <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
-                <input type="checkbox" data-action="toggle-objetivo" class="w-5 h-5 accent-brand-600 dark:accent-accent-500 shrink-0" ${o.feito ? 'checked' : ''} aria-label="Concluído">
-                <span class="truncate ${o.feito ? 'line-through text-gray-400 dark:text-gray-500' : ''}">${escapeHtml(o.texto)}</span>
-            </label>
-            <button type="button" data-action="remove-objetivo" aria-label="Remover objetivo" class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
-                <i aria-hidden="true" class="fa-solid fa-xmark text-xs"></i>
-            </button>
+        <li data-objetivo-item data-id="${o.id}" class="flex items-center gap-2 px-2 py-2 rounded border border-gray-200 dark:border-gray-700 opacity-60">
+            <span class="w-5 h-5 shrink-0 flex items-center justify-center text-gray-400" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
+            <span class="flex-1 min-w-0 truncate text-gray-500 dark:text-gray-400">${escapeHtml(o.texto)}</span>
+            <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">Migrado</span>
         </li>`;
+    }
+
+    function renderObjetivoItem(o, indice, dateKey) {
+        if (o.migrado) return renderObjetivoMigrado(o);
+        const temNota = !!window.LogZenData.getObjetivoNota(dateKey, o.id);
+        return `
+        <li data-objetivo-item data-id="${o.id}" class="rounded border p-2 ${corObjetivoPorPosicao(indice)}">
+            <div class="flex items-center gap-2">
+                <button type="button" data-objetivo-drag-handle aria-label="Arrastar para reordenar ${escapeHtml(o.texto)}"
+                    class="w-7 h-7 -ml-1 shrink-0 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
+                    <i aria-hidden="true" class="fa-solid fa-grip-vertical"></i>
+                </button>
+                <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                    <input type="checkbox" data-action="toggle-objetivo" class="w-5 h-5 accent-brand-600 dark:accent-accent-500 shrink-0" ${o.feito ? 'checked' : ''} aria-label="Concluído">
+                    <span class="truncate ${o.feito ? 'line-through text-gray-400 dark:text-gray-500' : ''}">${escapeHtml(o.texto)}</span>
+                </label>
+                ${notaBtnObjetivo(o, temNota)}
+                <button type="button" data-action="remove-objetivo" aria-label="Remover objetivo" class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                    <i aria-hidden="true" class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+            ${notaBoxObjetivo(o, dateKey)}
+        </li>`;
+    }
+
+    // Colore por posição só entre os ATIVOS (não migrados) — um migrado não
+    // ocupa vaga na regra 1-3-5, é só histórico do dia de origem.
+    function renderListaObjetivos(lista, dateKey) {
+        let indiceAtivo = 0;
+        return lista.map((o) => {
+            if (o.migrado) return renderObjetivoItem(o, -1, dateKey);
+            const html = renderObjetivoItem(o, indiceAtivo, dateKey);
+            indiceAtivo += 1;
+            return html;
+        }).join('');
     }
 
     function renderObjetivos(dateKey) {
         const lista = window.LogZenData.getObjetivos(dateKey);
+        const temAtivos = lista.some((o) => !o.migrado);
         return `
         <details data-cat="__objetivos__" open class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
                 <i aria-hidden="true" class="fa-solid fa-bullseye text-brand-600 dark:text-accent-400"></i>
                 Objetivos do dia
-                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">O que você quer conseguir hoje.</span>
+                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">Regra 1-3-5 — arraste para definir a prioridade.</span>
             </summary>
             <div class="p-4 space-y-2">
-                <ul data-objetivos-lista class="space-y-1">${lista.map(renderObjetivoItem).join('')}</ul>
-                <p data-objetivos-vazio class="text-xs text-gray-500 dark:text-gray-400 ${lista.length ? 'hidden' : ''}">Nenhum objetivo ainda — adicione um abaixo.</p>
+                <ul data-objetivos-lista class="space-y-2">${renderListaObjetivos(lista, dateKey)}</ul>
+                <p data-objetivos-vazio class="text-xs text-gray-500 dark:text-gray-400 ${temAtivos ? 'hidden' : ''}">Nenhum objetivo ainda — adicione um abaixo.</p>
                 <form data-add-objetivo-form class="flex items-center gap-2 pt-1">
                     <input type="text" data-field="texto" placeholder="Adicionar objetivo…" maxlength="140"
                         class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
@@ -274,6 +339,7 @@
     }
 
     function render(root, dateKey) {
+        if (dateKey === window.LogZenData.todayKey()) window.LogZenData.migrarObjetivosPendentes(dateKey);
         const categorias = window.LogZenCatalog.getCategorias();
         root.innerHTML =
             renderObjetivos(dateKey) +
@@ -365,11 +431,41 @@
         }, 400));
     }
 
+    const timersNotaObjetivo = new WeakMap();
+    function salvarNotaObjetivoDebounced(el, dateKey, objetivoId) {
+        clearTimeout(timersNotaObjetivo.get(el));
+        timersNotaObjetivo.set(el, setTimeout(() => {
+            const texto = el.value.trim();
+            window.LogZenData.setObjetivoNota(dateKey, objetivoId, texto);
+            const li = el.closest('[data-objetivo-item]');
+            const btn = li && li.querySelector('[data-action="toggle-nota"]');
+            if (btn) {
+                btn.classList.toggle('text-brand-600', !!texto);
+                btn.classList.toggle('dark:text-accent-400', !!texto);
+                btn.classList.toggle('text-gray-400', !texto);
+            }
+        }, 400));
+    }
+
+    // Reaplica a cor por posição (regra 1-3-5) depois que a ordem muda —
+    // arrastar (issue #12) ou remover um objetivo desloca os que vinham
+    // depois. Itens migrados (sem checkbox) não entram na contagem.
+    function recolorirObjetivos(root) {
+        const itens = root.querySelectorAll('[data-objetivos-lista] > [data-objetivo-item]');
+        let indice = 0;
+        itens.forEach((li) => {
+            if (!li.querySelector('[data-action="toggle-objetivo"]')) return; // migrado — não recolore
+            li.className = li.className.replace(/bg-\S+|dark:bg-\S+|border-\S+|dark:border-\S+/g, '').trim();
+            li.classList.add(...corObjetivoPorPosicao(indice).split(' '));
+            indice += 1;
+        });
+    }
+
     function wire(root) {
         root.addEventListener('click', (e) => {
             const notaToggle = e.target.closest('[data-action="toggle-nota"]');
             if (notaToggle) {
-                const row = notaToggle.closest('[data-row]');
+                const row = notaToggle.closest('[data-row], [data-objetivo-item]');
                 const wrap = row.querySelector('[data-nota-wrap]');
                 wrap.hidden = !wrap.hidden;
                 notaToggle.setAttribute('aria-expanded', String(!wrap.hidden));
@@ -384,7 +480,8 @@
                 window.LogZenData.setObjetivos(dataAtual, lista);
                 const ul = li.parentElement;
                 li.remove();
-                if (lista.length === 0) {
+                recolorirObjetivos(root);
+                if (!lista.some((o) => !o.migrado)) {
                     const vazio = ul.parentElement.querySelector('[data-objetivos-vazio]');
                     if (vazio) vazio.classList.remove('hidden');
                 }
@@ -471,6 +568,11 @@
                 return;
             }
             if (e.target.matches('[data-item-nota]')) {
+                const objetivoLi = e.target.closest('[data-objetivo-item]');
+                if (objetivoLi) {
+                    salvarNotaObjetivoDebounced(e.target, dataAtual, objetivoLi.dataset.id);
+                    return;
+                }
                 const row = e.target.closest('[data-row]');
                 if (!row) return;
                 salvarNotaItemDebounced(e.target, dataAtual, row.dataset.cat, row.dataset.item);
@@ -486,10 +588,11 @@
             if (!texto) return;
             const novo = { id: gerarIdObjetivo(), texto, feito: false };
             const lista = window.LogZenData.getObjetivos(dataAtual);
+            const indiceAtivos = lista.filter((o) => !o.migrado).length;
             lista.push(novo);
             window.LogZenData.setObjetivos(dataAtual, lista);
             const container = form.parentElement;
-            container.querySelector('[data-objetivos-lista]').insertAdjacentHTML('beforeend', renderObjetivoItem(novo));
+            container.querySelector('[data-objetivos-lista]').insertAdjacentHTML('beforeend', renderObjetivoItem(novo, indiceAtivos, dataAtual));
             const vazio = container.querySelector('[data-objetivos-vazio]');
             if (vazio) vazio.classList.add('hidden');
             input.value = '';
@@ -821,6 +924,22 @@
         render(rootEl, dataAtual);
         wire(rootEl);
         wireExportImport();
+
+        // Arrastar para reordenar objetivos (issue #12) — a posição na
+        // lista É a prioridade (regra 1-3-5), então arrastar muda a cor.
+        window.LogZenReorder.ativar(rootEl, {
+            itemSelector: '[data-objetivo-item]',
+            handleSelector: '[data-objetivo-drag-handle]',
+            groupSelector: '[data-objetivos-lista]',
+            getId: (el) => el.dataset.id,
+            onReorder: (ids) => {
+                const atual = window.LogZenData.getObjetivos(dataAtual);
+                const porId = new Map(atual.map((o) => [o.id, o]));
+                const novaLista = ids.map((id) => porId.get(id)).filter(Boolean);
+                window.LogZenData.setObjetivos(dataAtual, novaLista);
+                recolorirObjetivos(rootEl);
+            },
+        });
 
         const btnAnterior = $('#hojeDiaAnterior');
         if (btnAnterior) btnAnterior.addEventListener('click', () => irParaDia(-1));

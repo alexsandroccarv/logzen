@@ -98,6 +98,51 @@ window.LogZenData = (function () {
         writeAll(all);
     }
 
+    // Nota curta por objetivo (issue #12) — mesmo padrão da issue #3, só que
+    // sem categoria (objetivos não fazem parte do catálogo de hábitos).
+    function getObjetivoNota(dateKey, objetivoId) {
+        const entry = getEntry(dateKey);
+        return (entry.objetivosNotas && entry.objetivosNotas[objetivoId]) || '';
+    }
+
+    function setObjetivoNota(dateKey, objetivoId, texto) {
+        const all = readAll();
+        if (!all[dateKey]) all[dateKey] = {};
+        if (!all[dateKey].objetivosNotas) all[dateKey].objetivosNotas = {};
+        if (texto) all[dateKey].objetivosNotas[objetivoId] = texto;
+        else delete all[dateKey].objetivosNotas[objetivoId];
+        writeAll(all);
+    }
+
+    // Migração automática (issue #12, estilo Bullet Journal): ao abrir o dia
+    // de hoje, todo objetivo não concluído de um dia anterior que ainda não
+    // foi migrado é copiado para hoje; o original fica marcado como
+    // "migrado" no dia de origem (congelado, só como registro histórico) —
+    // assim não é migrado de novo da próxima vez. Olha até 60 dias para trás.
+    function migrarObjetivosPendentes(hojeKey) {
+        const hoje = getObjetivos(hojeKey);
+        let mudouHoje = false;
+        const cursor = new Date(hojeKey + 'T00:00:00');
+        for (let i = 0; i < 60; i += 1) {
+            cursor.setDate(cursor.getDate() - 1);
+            const diaChave = todayKey(cursor);
+            const lista = getObjetivos(diaChave);
+            if (!lista.length) continue;
+            let mudouEsseDia = false;
+            lista.forEach((o) => {
+                if (!o.feito && !o.migrado) {
+                    o.migrado = true;
+                    mudouEsseDia = true;
+                    hoje.push({ id: `${o.id}-m${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`, texto: o.texto, feito: false });
+                    mudouHoje = true;
+                }
+            });
+            if (mudouEsseDia) setObjetivos(diaChave, lista);
+        }
+        if (mudouHoje) setObjetivos(hojeKey, hoje);
+        return mudouHoje;
+    }
+
     function getNota(dateKey) {
         return getEntry(dateKey).nota || '';
     }
@@ -120,7 +165,8 @@ window.LogZenData = (function () {
 
     return {
         todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado,
-        getItemNota, setItemNota, getObjetivos, setObjetivos, getNota, setNota,
-        exportJSON, importJSON,
+        getItemNota, setItemNota, getObjetivos, setObjetivos,
+        getObjetivoNota, setObjetivoNota, migrarObjetivosPendentes,
+        getNota, setNota, exportJSON, importJSON,
     };
 })();
