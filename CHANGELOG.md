@@ -7,7 +7,18 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Added
+- Livros: campo opcional em Configurações → Livros para colar uma
+  chave própria e gratuita da Google Books API (mesmo padrão da OMDb
+  em Filmes: fica só no navegador, nunca embutida no código) — evita
+  depender da cota anônima, compartilhada por IP/rede e sujeita a
+  esgotar (issue #27).
+
 ### Fixed
+- Livros: mensagem de erro específica quando a Google Books retorna
+  cota esgotada (HTTP 429), diferente de uma falha de conexão
+  genérica, orientando a configurar a chave própria quando ainda não
+  há uma (issue #27).
 - Livros: mensagem de erro mais clara quando Google Books e Open
   Library falham as duas (ex.: cota anônima do Google Books
   esgotada — é por IP e pode ser consumida por outros usuários da

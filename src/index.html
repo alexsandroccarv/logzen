@@ -176,7 +176,9 @@
                     Registre os livros que está lendo ou já leu, com suas estrelas e
                     opinião. Busque por título ou ISBN — a busca usa a Google Books
                     API, com a Open Library como segunda fonte quando a primeira não
-                    encontra — ambas gratuitas, sem precisar de chave.
+                    encontra — ambas gratuitas, sem precisar de chave. Se a busca
+                    falhar por cota esgotada, configure sua própria chave gratuita
+                    da Google Books em Configurações → Livros.
                 </p>
                 <div id="livrosRoot" class="space-y-4"></div>
             </div>
@@ -261,6 +263,24 @@
                     </p>
                     <label for="omdbApiKeyInput" class="block text-xs font-medium mb-1">Chave da OMDb API</label>
                     <input id="omdbApiKeyInput" type="text" placeholder="ex.: a1b2c3d4" autocomplete="off"
+                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <i aria-hidden="true" class="fa-solid fa-book text-brand-600 dark:text-accent-400"></i> Livros
+                    </h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        A busca em Livros funciona sem chave, mas a cota anônima
+                        da Google Books é compartilhada por IP/rede e pode se
+                        esgotar. Para ter sua própria cota, cole aqui uma chave
+                        gratuita da
+                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-brand-600 dark:text-accent-400 hover:underline">Google Books API</a>.
+                        Fica só neste navegador — sem ela, a busca continua
+                        funcionando normalmente (só sujeita à cota anônima).
+                    </p>
+                    <label for="googleBooksApiKeyInput" class="block text-xs font-medium mb-1">Chave da Google Books API (opcional)</label>
+                    <input id="googleBooksApiKeyInput" type="text" placeholder="ex.: AIzaSy…" autocomplete="off"
                         class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                 </div>
 
