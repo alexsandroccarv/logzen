@@ -78,6 +78,8 @@ window.LogZenFilmes = (function () {
 (function () {
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
     const TIPO_LABEL = { movie: 'Filme', series: 'Série', episode: 'Episódio' };
+    const LOCAL_LABEL = { tv_aberta: 'TV aberta', cinema: 'Cinema', streaming: 'Streaming' };
+    const SERVICOS_STREAMING = ['Netflix', 'Mubi', 'HBO Max', 'Amazon Prime Video', 'Apple TV+', 'Disney+', 'Globoplay', 'Star+', 'Paramount+', 'Outro'];
 
     function escapeHtml(s) {
         return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -115,6 +117,57 @@ window.LogZenFilmes = (function () {
         </button>`;
     }
 
+    function renderLocalCampos(r) {
+        const streamingHidden = r.local !== 'streaming' ? 'hidden' : '';
+        const servicoOutroHidden = r.servico !== 'outro' ? 'hidden' : '';
+        return `
+        <div>
+            <label class="block text-xs font-medium mb-1">Onde assistiu</label>
+            <select data-field="local" required
+                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                <option value="" ${!r.local ? 'selected' : ''} disabled>Selecione…</option>
+                <option value="tv_aberta" ${r.local === 'tv_aberta' ? 'selected' : ''}>TV aberta</option>
+                <option value="cinema" ${r.local === 'cinema' ? 'selected' : ''}>Cinema</option>
+                <option value="streaming" ${r.local === 'streaming' ? 'selected' : ''}>Streaming</option>
+            </select>
+        </div>
+        <div data-streaming-campos ${streamingHidden}>
+            <label class="block text-xs font-medium mb-1">Serviço de streaming</label>
+            <select data-field="servico"
+                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                <option value="">Selecione…</option>
+                ${SERVICOS_STREAMING.map((s) => {
+                    const valor = s === 'Outro' ? 'outro' : s;
+                    return `<option value="${escapeHtml(valor)}" ${r.servico === valor ? 'selected' : ''}>${escapeHtml(s)}</option>`;
+                }).join('')}
+            </select>
+            <input type="text" data-field="servicoOutro" ${servicoOutroHidden} maxlength="60" placeholder="Nome do serviço" value="${escapeHtml(r.servicoOutro || '')}"
+                class="mt-2 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+        </div>`;
+    }
+
+    function renderEpisodioCampos(r) {
+        const hidden = r.tipo !== 'series' ? 'hidden' : '';
+        return `
+        <div data-episodio-campos ${hidden} class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium mb-1">Temporada</label>
+                <input type="number" data-field="temporada" min="1" value="${escapeHtml(r.temporada || '')}"
+                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1">Episódio</label>
+                <input type="number" data-field="episodio" min="1" value="${escapeHtml(r.episodio || '')}"
+                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            </div>
+            <div class="col-span-2">
+                <label class="block text-xs font-medium mb-1">Título do episódio (opcional)</label>
+                <input type="text" data-field="episodioTitulo" maxlength="120" value="${escapeHtml(r.episodioTitulo || '')}"
+                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            </div>
+        </div>`;
+    }
+
     function renderRascunho() {
         if (!rascunho) return '';
         const hoje = window.LogZenData.todayKey();
@@ -146,6 +199,8 @@ window.LogZenFilmes = (function () {
         return `
         <form data-form-rascunho class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
             ${cabecalho}
+            ${renderEpisodioCampos(rascunho)}
+            ${renderLocalCampos(rascunho)}
             <div>
                 <label class="block text-xs font-medium mb-1">Assistido em</label>
                 <input type="date" data-field="assistidoEm" value="${rascunho.assistidoEm}" max="${hoje}"
@@ -200,7 +255,13 @@ window.LogZenFilmes = (function () {
         const poster = e.poster
             ? `<img src="${escapeHtml(e.poster)}" alt="" class="w-14 h-20 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
             : `<div class="w-14 h-20 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-film"></i></div>`;
-        const detalhes = [e.ano, e.tempo, e.genero, TIPO_LABEL[e.tipo] || e.tipo].filter(Boolean).join(' · ');
+        const localTexto = e.local
+            ? (LOCAL_LABEL[e.local] || e.local) + (e.local === 'streaming' && e.servico ? ` (${e.servico})` : '')
+            : '';
+        const detalhes = [e.ano, e.tempo, e.genero, TIPO_LABEL[e.tipo] || e.tipo, localTexto].filter(Boolean).join(' · ');
+        const episodioTexto = e.tipo === 'series' && (e.temporada || e.episodio)
+            ? `T${e.temporada || '?'}E${e.episodio || '?'}${e.episodioTitulo ? ': ' + e.episodioTitulo : ''}`
+            : '';
         const estrelas = Array.from({ length: 5 }, (_, i) => i + 1)
             .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-sm"></i>`).join('');
         const dataFmt = new Date(e.assistidoEm + 'T00:00:00').toLocaleDateString('pt-BR');
@@ -211,6 +272,7 @@ window.LogZenFilmes = (function () {
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
                         <p class="font-semibold truncate">${escapeHtml(e.titulo)}</p>
+                        ${episodioTexto ? `<p class="text-xs font-medium text-brand-700 dark:text-accent-400 truncate">${escapeHtml(episodioTexto)}</p>` : ''}
                         <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)} · assistido em ${dataFmt}</p>
                     </div>
                     <button type="button" data-action="remover-filme" aria-label="Remover ${escapeHtml(e.titulo)}"
@@ -248,6 +310,7 @@ window.LogZenFilmes = (function () {
                 rascunho = {
                     manual: true, titulo: '', tipo: 'movie', poster: '', ano: '', tempo: '', genero: '', premios: '',
                     assistidoEm: window.LogZenData.todayKey(), estrelas: 0, opiniao: '',
+                    local: '', servico: '', servicoOutro: '', temporada: '', episodio: '', episodioTitulo: '',
                 };
                 render();
                 return;
@@ -272,6 +335,7 @@ window.LogZenFilmes = (function () {
                         assistidoEm: window.LogZenData.todayKey(),
                         estrelas: 0,
                         opiniao: '',
+                        local: '', servico: '', servicoOutro: '', temporada: '', episodio: '', episodioTitulo: '',
                     };
                     render();
                 } catch (err) {
@@ -314,6 +378,26 @@ window.LogZenFilmes = (function () {
             }
         });
 
+        rootEl.addEventListener('change', (e) => {
+            const localSelect = e.target.closest('[data-field="local"]');
+            if (localSelect) {
+                const campos = localSelect.closest('form').querySelector('[data-streaming-campos]');
+                if (campos) campos.hidden = localSelect.value !== 'streaming';
+                return;
+            }
+            const servicoSelect = e.target.closest('[data-field="servico"]');
+            if (servicoSelect) {
+                const outroInput = servicoSelect.closest('[data-streaming-campos]').querySelector('[data-field="servicoOutro"]');
+                if (outroInput) outroInput.hidden = servicoSelect.value !== 'outro';
+                return;
+            }
+            const tipoSelect = e.target.closest('[data-field="tipo"]');
+            if (tipoSelect) {
+                const campos = tipoSelect.closest('form').querySelector('[data-episodio-campos]');
+                if (campos) campos.hidden = tipoSelect.value !== 'series';
+            }
+        });
+
         rootEl.addEventListener('submit', async (e) => {
             const buscaForm = e.target.closest('form[data-form-busca]');
             if (buscaForm) {
@@ -345,6 +429,25 @@ window.LogZenFilmes = (function () {
                 }
                 rascunho.assistidoEm = rascunhoForm.querySelector('[data-field="assistidoEm"]').value || window.LogZenData.todayKey();
                 rascunho.opiniao = rascunhoForm.querySelector('[data-field="opiniao"]').value.trim();
+                rascunho.local = rascunhoForm.querySelector('[data-field="local"]').value;
+                if (rascunho.local === 'streaming') {
+                    const servicoVal = rascunhoForm.querySelector('[data-field="servico"]').value;
+                    rascunho.servico = servicoVal === 'outro'
+                        ? rascunhoForm.querySelector('[data-field="servicoOutro"]').value.trim()
+                        : servicoVal;
+                } else {
+                    rascunho.servico = '';
+                }
+                delete rascunho.servicoOutro;
+                if (rascunho.tipo === 'series') {
+                    rascunho.temporada = rascunhoForm.querySelector('[data-field="temporada"]').value.trim();
+                    rascunho.episodio = rascunhoForm.querySelector('[data-field="episodio"]').value.trim();
+                    rascunho.episodioTitulo = rascunhoForm.querySelector('[data-field="episodioTitulo"]').value.trim();
+                } else {
+                    rascunho.temporada = '';
+                    rascunho.episodio = '';
+                    rascunho.episodioTitulo = '';
+                }
                 const entrada = { ...rascunho, id: gerarId(), criadoEm: Date.now() };
                 delete entrada.manual;
                 window.LogZenFilmes.salvar(entrada);

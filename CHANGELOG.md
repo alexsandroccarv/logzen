@@ -8,6 +8,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Filmes: registro de séries passa a ser **por episódio** (temporada,
+  número do episódio e título do episódio opcional); tanto filmes quanto
+  séries ganharam o campo "Onde assistiu" (TV aberta, Cinema ou Streaming
+  — e, nesse caso, o serviço: Netflix, Mubi, HBO Max, Prime Video, Apple
+  TV+ etc., ou "Outro" para digitar) (issue #13).
 - Objetivos do dia: regra 1-3-5 (lista fechada, estilo Bullet Journal) —
   a cor de cada objetivo vem da sua **posição** na lista (1ª = vermelho
   claro/urgente, 2ª–4ª = amarelo claro, 5ª–9ª = verde clarinho, 10ª em
