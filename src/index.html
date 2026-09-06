@@ -97,7 +97,21 @@
     <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
         <div id="tab-hoje" class="tab-panel" role="tabpanel" aria-labelledby="tab-hoje-btn" tabindex="0">
             <div class="max-w-2xl mx-auto space-y-4">
-                <h2 class="text-lg font-bold capitalize" id="hojeDataLabel">Hoje</h2>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="hojeDiaAnterior" aria-label="Dia anterior"
+                        class="w-9 h-9 shrink-0 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <h2 class="text-lg font-bold capitalize flex-1 text-center truncate" id="hojeDataLabel">Hoje</h2>
+                    <button type="button" id="hojeDiaProximo" aria-label="Próximo dia"
+                        class="w-9 h-9 shrink-0 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed">
+                        <i aria-hidden="true" class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+                <button type="button" id="hojeVoltarHoje" hidden
+                    class="text-xs font-medium text-brand-700 dark:text-accent-400 hover:underline -mt-2">
+                    <i aria-hidden="true" class="fa-solid fa-arrow-rotate-left mr-1"></i>Voltar para hoje
+                </button>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                     Toque para abrir cada categoria, registre e feche — tudo fica salvo
                     automaticamente só neste navegador, sem enviar nada para nenhum servidor.

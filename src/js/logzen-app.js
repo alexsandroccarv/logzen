@@ -15,6 +15,12 @@
     ];
     const corVicio = (v) => CORES_VICIO[v <= 0 ? 0 : (v <= 2 ? 1 : 2)];
 
+    // Dia atualmente exibido na tela "Hoje" — mutável para permitir "passear"
+    // pelos registros com as setas (issue #5), sem duplicar a lógica de
+    // renderização/eventos por data.
+    let dataAtual = window.LogZenData.todayKey();
+    let rootEl = null;
+
     function escapeHtml(s) {
         return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
@@ -247,9 +253,9 @@
 
     // Recria o HTML (após adicionar/remover item) preservando quais blocos
     // (nota + categorias, sempre nesta ordem) estavam abertos/fechados.
-    function reRenderPreservingState(root, dateKey) {
+    function reRenderPreservingState(root) {
         const abertos = Array.from(root.querySelectorAll(':scope > details')).map((d) => d.open);
-        render(root, dateKey);
+        render(root, dataAtual);
         Array.from(root.querySelectorAll(':scope > details')).forEach((d, i) => {
             if (abertos[i] !== undefined) d.open = abertos[i];
         });
@@ -257,7 +263,35 @@
 
     function formatarDataExtenso(dateKey) {
         const d = new Date(dateKey + 'T00:00:00');
-        return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+        const texto = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+        return dateKey === window.LogZenData.todayKey() ? `Hoje — ${texto}` : texto;
+    }
+
+    // Move `dataAtual` `delta` dias (não deixa passar de hoje) e re-renderiza.
+    function irParaDia(delta) {
+        const d = new Date(dataAtual + 'T00:00:00');
+        d.setDate(d.getDate() + delta);
+        const novaChave = window.LogZenData.todayKey(d);
+        if (novaChave > window.LogZenData.todayKey()) return;
+        dataAtual = novaChave;
+        atualizarCabecalho();
+        render(rootEl, dataAtual);
+    }
+
+    function irParaHoje() {
+        dataAtual = window.LogZenData.todayKey();
+        atualizarCabecalho();
+        render(rootEl, dataAtual);
+    }
+
+    function atualizarCabecalho() {
+        const dataLabel = $('#hojeDataLabel');
+        if (dataLabel) dataLabel.textContent = formatarDataExtenso(dataAtual);
+        const hoje = window.LogZenData.todayKey();
+        const btnProximo = $('#hojeDiaProximo');
+        if (btnProximo) btnProximo.disabled = dataAtual >= hoje;
+        const btnVoltar = $('#hojeVoltarHoje');
+        if (btnVoltar) btnVoltar.hidden = dataAtual === hoje;
     }
 
     // Mostra só o campo relevante ao tipo escolhido no formulário de novo item.
@@ -288,7 +322,7 @@
         }, 400));
     }
 
-    function wire(root, dateKey) {
+    function wire(root) {
         root.addEventListener('click', (e) => {
             const toggleBtn = e.target.closest('[data-action="toggle-add-form"]');
             if (toggleBtn) {
@@ -327,7 +361,7 @@
                 const nome = row.dataset.nome || '';
                 if (!window.confirm(`Remover "${nome}"? Os registros já salvos para este item continuam guardados, só ele deixa de aparecer na tela.`)) return;
                 window.LogZenCatalog.removeCustomItem(row.dataset.cat, row.dataset.item);
-                reRenderPreservingState(root, dateKey);
+                reRenderPreservingState(root);
                 return;
             }
 
@@ -339,27 +373,27 @@
             const action = btn.dataset.action;
 
             if (tipo === 'contador' || tipo === 'contador-inverso') {
-                let valor = window.LogZenData.getItemValue(dateKey, cat, item, 0);
+                let valor = window.LogZenData.getItemValue(dataAtual, cat, item, 0);
                 if (action === 'inc') valor += 1;
                 else if (action === 'dec') valor = Math.max(0, valor - 1);
                 else if (action === 'quick') valor += parseInt(btn.dataset.amount, 10) || 0;
                 else return;
-                window.LogZenData.setItemValue(dateKey, cat, item, valor);
+                window.LogZenData.setItemValue(dataAtual, cat, item, valor);
                 row.querySelector('[data-value]').textContent = valor;
                 if (tipo === 'contador-inverso') {
                     row.className = row.className.replace(/bg-\S+|dark:bg-\S+|border-\S+|dark:border-\S+|text-\S+|dark:text-\S+/g, '').trim();
                     row.classList.add('rounded-lg', 'border', 'p-3', 'my-2', 'transition-colors', ...corVicio(valor).split(' '));
                     row.querySelector('[data-streak]').textContent =
-                        `${window.LogZenData.streakZerado(cat, item, dateKey)} dia(s) sem "${row.dataset.nome}"`;
+                        `${window.LogZenData.streakZerado(cat, item, dataAtual)} dia(s) sem "${row.dataset.nome}"`;
                 }
                 return;
             }
 
             if (tipo === 'escala' && action === 'star') {
                 const n = parseInt(btn.dataset.n, 10);
-                const atual = window.LogZenData.getItemValue(dateKey, cat, item, 0);
+                const atual = window.LogZenData.getItemValue(dataAtual, cat, item, 0);
                 const novo = atual === n ? 0 : n; // clicar na mesma estrela zera (permite desfazer)
-                window.LogZenData.setItemValue(dateKey, cat, item, novo);
+                window.LogZenData.setItemValue(dataAtual, cat, item, novo);
                 row.querySelectorAll('button[data-action="star"]').forEach((b) => {
                     const bn = parseInt(b.dataset.n, 10);
                     const ativo = bn <= novo;
@@ -372,7 +406,7 @@
             }
 
             if (tipo === 'tags' && action === 'tag') {
-                const ativo = window.LogZenData.toggleTag(dateKey, cat, item, btn.dataset.tag);
+                const ativo = window.LogZenData.toggleTag(dataAtual, cat, item, btn.dataset.tag);
                 btn.setAttribute('aria-pressed', ativo);
                 btn.classList.toggle('bg-brand-600', ativo);
                 btn.classList.toggle('dark:bg-accent-600', ativo);
@@ -390,19 +424,19 @@
             }
             const row = e.target.closest('[data-row][data-tipo="checkbox"]');
             if (row && e.target.dataset.action === 'checkbox') {
-                window.LogZenData.setItemValue(dateKey, row.dataset.cat, row.dataset.item, e.target.checked);
+                window.LogZenData.setItemValue(dataAtual, row.dataset.cat, row.dataset.item, e.target.checked);
             }
         });
 
         root.addEventListener('input', (e) => {
             if (e.target.matches('[data-nota]')) {
-                salvarNotaDebounced(dateKey, e.target.value);
+                salvarNotaDebounced(dataAtual, e.target.value);
                 return;
             }
             if (e.target.matches('[data-item-nota]')) {
                 const row = e.target.closest('[data-row]');
                 if (!row) return;
-                salvarNotaItemDebounced(e.target, dateKey, row.dataset.cat, row.dataset.item);
+                salvarNotaItemDebounced(e.target, dataAtual, row.dataset.cat, row.dataset.item);
             }
         });
 
@@ -426,11 +460,11 @@
                 }
             }
             window.LogZenCatalog.addCustomItem(form.dataset.cat, dados);
-            reRenderPreservingState(root, dateKey);
+            reRenderPreservingState(root);
         });
     }
 
-    function wireExportImport(dateKey) {
+    function wireExportImport() {
         const btnExport = $('#logzenExportBtn');
         if (btnExport) {
             btnExport.addEventListener('click', () => {
@@ -438,7 +472,7 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `logzen-dados-${dateKey}.json`;
+                a.download = `logzen-dados-${window.LogZenData.todayKey()}.json`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -465,14 +499,19 @@
     }
 
     function init() {
-        const root = $('#hojeRoot');
-        if (!root) return;
-        const dateKey = window.LogZenData.todayKey();
-        const dataLabel = $('#hojeDataLabel');
-        if (dataLabel) dataLabel.textContent = formatarDataExtenso(dateKey);
-        render(root, dateKey);
-        wire(root, dateKey);
-        wireExportImport(dateKey);
+        rootEl = $('#hojeRoot');
+        if (!rootEl) return;
+        atualizarCabecalho();
+        render(rootEl, dataAtual);
+        wire(rootEl);
+        wireExportImport();
+
+        const btnAnterior = $('#hojeDiaAnterior');
+        if (btnAnterior) btnAnterior.addEventListener('click', () => irParaDia(-1));
+        const btnProximo = $('#hojeDiaProximo');
+        if (btnProximo) btnProximo.addEventListener('click', () => irParaDia(1));
+        const btnVoltar = $('#hojeVoltarHoje');
+        if (btnVoltar) btnVoltar.addEventListener('click', irParaHoje);
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

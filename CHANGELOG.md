@@ -27,6 +27,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   curta e opcional (fechada por padrão); o ícone muda de cor quando já
   existe uma nota salva para aquele item, mesmo com a caixa fechada
   (issue #3).
+- Navegação entre dias na tela "Hoje": setas anterior/próximo ao lado da
+  data (a seta de avançar trava no dia atual, sem ir para o futuro) e
+  link "Voltar para hoje" quando estiver em outro dia. Categorias, nota
+  do dia e notas por item passam a refletir o dia selecionado (issue #5).
 
 ### Changed
 - Exportar/importar dados (JSON) saiu do cabeçalho da tela "Hoje" e virou
