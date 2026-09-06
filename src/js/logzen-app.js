@@ -148,12 +148,44 @@
         </div>`;
     }
 
+    // Horário (issue #23): início e fim do dia, ex. "Horário de sono". O
+    // valor guardado é um objeto { inicio, fim } (strings "HH:MM"), em vez
+    // do escalar único dos outros tipos — cada campo de hora edita sua
+    // própria chave, sem mexer na outra.
+    function renderHorario(cat, item, dateKey) {
+        const valor = window.LogZenData.getItemValue(dateKey, cat.id, item.id, { inicio: '', fim: '' });
+        const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
+        return `
+        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="horario" data-nome="${escapeHtml(item.nome)}">
+            <div class="flex items-center justify-between gap-3 mb-2">
+                <span class="font-medium">${escapeHtml(item.nome)}</span>
+                <div class="flex items-center gap-2 shrink-0">
+                    ${notaBtn(item, temNota)}
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Início</label>
+                    <input type="time" data-field="inicio" value="${escapeHtml(valor.inicio || '')}"
+                        class="px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Fim</label>
+                    <input type="time" data-field="fim" value="${escapeHtml(valor.fim || '')}"
+                        class="px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+            </div>
+            ${notaBox(cat, item, dateKey)}
+        </div>`;
+    }
+
     const RENDERERS = {
         'contador': renderContador,
         'contador-inverso': renderContadorInverso,
         'checkbox': renderCheckbox,
         'escala': renderEscala,
         'tags': renderTags,
+        'horario': renderHorario,
     };
 
     const TIPOS_LABEL = {
@@ -162,6 +194,7 @@
         'checkbox': 'Sim/Não',
         'escala': 'Escala de 1 a 5 estrelas',
         'tags': 'Tags (múltipla escolha)',
+        'horario': 'Horário (início e fim)',
     };
 
     function renderFormularioNovoItem(cat) {
@@ -581,6 +614,14 @@
             const row = e.target.closest('[data-row][data-tipo="checkbox"]');
             if (row && e.target.dataset.action === 'checkbox') {
                 window.LogZenData.setItemValue(dataAtual, row.dataset.cat, row.dataset.item, e.target.checked);
+                return;
+            }
+
+            const rowHorario = e.target.closest('[data-row][data-tipo="horario"]');
+            if (rowHorario && (e.target.dataset.field === 'inicio' || e.target.dataset.field === 'fim')) {
+                const atual = window.LogZenData.getItemValue(dataAtual, rowHorario.dataset.cat, rowHorario.dataset.item, { inicio: '', fim: '' });
+                const novo = { ...atual, [e.target.dataset.field]: e.target.value };
+                window.LogZenData.setItemValue(dataAtual, rowHorario.dataset.cat, rowHorario.dataset.item, novo);
             }
         });
 

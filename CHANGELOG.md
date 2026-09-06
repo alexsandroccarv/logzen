@@ -8,6 +8,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Itens rastreados: novo tipo de item **Horário** (início e fim, ex.:
+  "Horário de sono"), com dois campos de hora na tela "Hoje", editáveis
+  a qualquer momento — segue o mesmo padrão de nota por item já usado
+  nos demais tipos (issue #23).
 - Backlog: o campo "Projeto" virou um seletor com os projetos já usados
   (evita duplicar por variação de digitação), com opção "Outro" para
   criar um novo; a lista de tarefas (pendentes e enviadas) passa a ser
