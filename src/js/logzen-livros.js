@@ -1,8 +1,11 @@
 /* ==========================================================================
    LogZen — Livros (issue #14): registro de livros lidos, com busca de
    metadados (capa, autor, editora, páginas) via Google Books API — gratuita
-   e sem chave em volume baixo. Se ela não encontrar nada, cai automaticamente
-   para a Open Library API (issue #24) — segunda fonte, também sem chave.
+   e sem chave em volume baixo. Se ela não encontrar nada (ou falhar, ex.:
+   cota anônima esgotada), cai automaticamente para a Open Library API
+   (issue #24) — segunda fonte, também sem chave. Chave própria opcional da
+   Google Books (issue #27), colada em Configurações → Livros e guardada só
+   no localStorage, para fugir da cota anônima compartilhada por IP/rede.
    A busca aceita título ou ISBN (10 ou 13 dígitos, com ou sem hífen) — o
    código detecta automaticamente qual é o caso. Os resultados das duas
    fontes são normalizados para o mesmo formato antes de exibir. Fallback de
@@ -11,6 +14,7 @@
    ========================================================================== */
 window.LogZenLivros = (function () {
     const ENTRIES_KEY = 'logzen:livros:v1';
+    const APIKEY_KEY = 'logzen:google-books-key:v1';
 
     // Open Library usa códigos de 3 letras (ISO 639-2); Google Books usa
     // 2 letras (ISO 639-1) — o mapa cobre os dois formatos.
@@ -57,6 +61,22 @@ window.LogZenLivros = (function () {
         return IDIOMA_LABEL[codigo] || codigo;
     }
 
+    // Chave opcional da Google Books (issue #27): sem ela, a busca usa a cota
+    // anônima (compartilhada por IP/rede, sujeita a esgotar); com ela, o
+    // usuário passa a ter cota própria. Colada em Configurações → Livros,
+    // guardada só neste navegador — nunca embutida no código publicado.
+    function getApiKey() {
+        try { return localStorage.getItem(APIKEY_KEY) || ''; }
+        catch (e) { return ''; }
+    }
+
+    function setApiKey(key) {
+        try {
+            if (key) localStorage.setItem(APIKEY_KEY, key);
+            else localStorage.removeItem(APIKEY_KEY);
+        } catch (e) { /* storage indisponível — segue sem persistir */ }
+    }
+
     // Aceita ISBN-10 (9 dígitos + dígito verificador, que pode ser X) ou
     // ISBN-13 (13 dígitos), com ou sem hífen/espaço.
     function pareceIsbn(query) {
@@ -87,7 +107,16 @@ window.LogZenLivros = (function () {
 
     async function buscarGoogleBooks(query) {
         const termo = pareceIsbn(query) ? `isbn:${query.replace(/[-\s]/g, '')}` : query;
-        const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(termo)}&maxResults=10`);
+        const key = getApiKey();
+        const chaveParam = key ? `&key=${encodeURIComponent(key)}` : '';
+        const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(termo)}&maxResults=10${chaveParam}`);
+        if (resp.status === 429) {
+            const err = new Error(key
+                ? 'Cota da sua chave do Google Books esgotada por hoje.'
+                : 'Cota anônima do Google Books esgotada (comum em redes compartilhadas) — configure sua própria chave em Configurações → Livros.');
+            err.cotaEsgotada = true;
+            throw err;
+        }
         if (!resp.ok) throw new Error('Falha ao conectar com o Google Books.');
         const dados = await resp.json();
         return (dados.items || []).filter((it) => it.volumeInfo && it.volumeInfo.title).map((it) => {
@@ -117,16 +146,22 @@ window.LogZenLivros = (function () {
         try { resultados = await buscarGoogleBooks(query); } catch (e) { erroGoogleBooks = e; }
         if (resultados.length) return resultados;
         try {
-            return await buscarOpenLibrary(query);
+            const viaOpenLibrary = await buscarOpenLibrary(query);
+            // Guarda o motivo específico (ex.: cota esgotada) para a UI avisar
+            // com precisão, em vez do genérico "não encontrou nada".
+            if (erroGoogleBooks) viaOpenLibrary.avisoGoogleBooks = erroGoogleBooks.message;
+            return viaOpenLibrary;
         } catch (e) {
-            // As duas fontes falharam — avisa isso de forma clara, em vez de
-            // só repetir o erro da Open Library como se fosse a única tentada.
+            // As duas fontes falharam — se o motivo foi cota esgotada, essa
+            // mensagem já é específica o bastante; senão, avisa que as duas
+            // tentativas falharam, em vez de só repetir o erro da Open Library.
+            if (erroGoogleBooks && erroGoogleBooks.cotaEsgotada) throw erroGoogleBooks;
             if (erroGoogleBooks) throw new Error('Google Books e Open Library falharam — tente de novo em instantes, ou registre manualmente.');
             throw e;
         }
     }
 
-    return { listar, salvar, remover, labelIdioma, buscarPorTitulo };
+    return { listar, salvar, remover, labelIdioma, buscarPorTitulo, getApiKey, setApiKey };
 })();
 
 (function () {
@@ -399,7 +434,10 @@ window.LogZenLivros = (function () {
                     }
                     if (status) {
                         if (!resultados.length) { status.textContent = 'Nada encontrado.'; status.classList.remove('hidden'); }
-                        else if (resultados[0].fonte === 'Open Library') {
+                        else if (resultados.avisoGoogleBooks) {
+                            status.textContent = `${resultados.avisoGoogleBooks} Resultados via Open Library.`;
+                            status.classList.remove('hidden');
+                        } else if (resultados[0].fonte === 'Open Library') {
                             status.textContent = 'O Google Books não encontrou nada — resultados via Open Library.';
                             status.classList.remove('hidden');
                         } else {
@@ -442,6 +480,14 @@ window.LogZenLivros = (function () {
         if (root) {
             render();
             wire(root);
+        }
+
+        const apiKeyInput = $('#googleBooksApiKeyInput');
+        if (apiKeyInput) {
+            apiKeyInput.value = window.LogZenLivros.getApiKey();
+            apiKeyInput.addEventListener('change', () => {
+                window.LogZenLivros.setApiKey(apiKeyInput.value.trim());
+            });
         }
     }
 
