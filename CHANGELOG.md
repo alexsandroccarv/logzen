@@ -8,6 +8,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Nova aba "Podcasts": controle de assinaturas (busca via iTunes Search
+  API — pública, sem chave — trazendo capa, autor/apresentador,
+  categoria e link; cadastro manual também disponível) e episódios
+  ouvidos vinculados a uma assinatura, com duração, data, estrelas e
+  opinião. Editar/remover em ambos; remover uma assinatura não apaga
+  os episódios já registrados (guardam o nome do podcast como
+  snapshot histórico) (issue #22).
 - Filmes: colar um link do YouTube no campo de busca e clicar em
   "Buscar" traz os dados do vídeo (título, miniatura, canal) via
   oEmbed do YouTube — público, sem precisar de chave. O campo de busca
