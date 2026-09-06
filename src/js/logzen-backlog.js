@@ -54,6 +54,13 @@ window.LogZenBacklog = (function () {
         return readEntries().find((t) => t.id === id);
     }
 
+    // Projetos já usados (pendentes ou enviadas), para popular o seletor do
+    // formulário e agrupar a lista — sem duplicar, em ordem alfabética.
+    function listarProjetos() {
+        const nomes = new Set(readEntries().map((t) => (t.projeto || '').trim()).filter(Boolean));
+        return Array.from(nomes).sort((a, b) => a.localeCompare(b));
+    }
+
     function atualizar(id, dados) {
         const lista = readEntries();
         const item = lista.find((t) => t.id === id);
@@ -80,7 +87,7 @@ window.LogZenBacklog = (function () {
         writeEntries(lista);
     }
 
-    return { listarPendentes, listarEnviados, salvar, remover, obter, atualizar, marcarEnviado, desmarcarEnviado };
+    return { listarPendentes, listarEnviados, salvar, remover, obter, atualizar, marcarEnviado, desmarcarEnviado, listarProjetos };
 })();
 
 (function () {
@@ -107,6 +114,27 @@ window.LogZenBacklog = (function () {
     let root = null;
     let editandoId = null;
 
+    // Select com os projetos já usados + "Outro" para digitar um novo — em
+    // vez de um campo livre, evita variações do mesmo projeto por causa de
+    // digitação (ex.: "Casa Nova" vs "casa nova").
+    function renderCampoProjeto(v) {
+        const projetos = window.LogZenBacklog.listarProjetos();
+        const projetoConhecido = !v.projeto || projetos.includes(v.projeto);
+        const outroHidden = projetoConhecido ? 'hidden' : '';
+        return `
+        <div>
+            <label class="block text-xs font-medium mb-1">Projeto (opcional)</label>
+            <select data-field="projeto"
+                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                <option value="" ${!v.projeto ? 'selected' : ''}>Sem projeto</option>
+                ${projetos.map((p) => `<option value="${escapeHtml(p)}" ${v.projeto === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('')}
+                <option value="__outro__" ${!projetoConhecido ? 'selected' : ''}>Outro (novo projeto)…</option>
+            </select>
+            <input type="text" data-field="projetoOutro" ${outroHidden} maxlength="80" placeholder="Nome do novo projeto" value="${!projetoConhecido ? escapeHtml(v.projeto) : ''}"
+                class="mt-2 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+        </div>`;
+    }
+
     function renderForm() {
         const editando = editandoId ? window.LogZenBacklog.obter(editandoId) : null;
         const v = editando || { projeto: '', acao: '', prazoInicio: '', prazoFim: '', descricao: '' };
@@ -121,11 +149,7 @@ window.LogZenBacklog = (function () {
         <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 space-y-3">
             ${cabecalho}
             <form data-form-backlog ${editando ? '' : 'hidden'} class="space-y-3">
-                <div>
-                    <label class="block text-xs font-medium mb-1">Projeto (opcional)</label>
-                    <input type="text" data-field="projeto" maxlength="80" placeholder="ex.: Reforma da casa" value="${escapeHtml(v.projeto || '')}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                </div>
+                ${renderCampoProjeto(v)}
                 <div>
                     <label class="block text-xs font-medium mb-1">Ação</label>
                     <input type="text" data-field="acao" required maxlength="150" placeholder="O que precisa ser feito?" value="${escapeHtml(v.acao)}"
@@ -171,7 +195,6 @@ window.LogZenBacklog = (function () {
         <div data-backlog-tarefa data-id="${t.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                    ${t.projeto ? `<span class="inline-block px-2 py-0.5 rounded-full bg-brand-100 dark:bg-gray-700 text-brand-700 dark:text-accent-400 text-xs font-medium mb-1">${escapeHtml(t.projeto)}</span>` : ''}
                     <p class="font-semibold truncate">${escapeHtml(t.acao)}</p>
                     ${prazo ? `<p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(prazo)}</p>` : ''}
                     ${t.descricao ? `<p class="text-sm mt-1">${escapeHtml(t.descricao)}</p>` : ''}
@@ -199,7 +222,6 @@ window.LogZenBacklog = (function () {
         <div data-backlog-enviada data-id="${t.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                    ${t.projeto ? `<span class="inline-block px-2 py-0.5 rounded-full bg-brand-100 dark:bg-gray-700 text-brand-700 dark:text-accent-400 text-xs font-medium mb-1">${escapeHtml(t.projeto)}</span>` : ''}
                     <p class="font-semibold truncate">${escapeHtml(t.acao)}</p>
                     ${dataValida(t.enviadoEm) ? `<p class="text-xs font-medium text-green-700 dark:text-green-400">Enviada para hoje em ${escapeHtml(fmtData(t.enviadoEm))}</p>` : ''}
                     ${t.descricao ? `<p class="text-sm mt-1">${escapeHtml(t.descricao)}</p>` : ''}
@@ -222,20 +244,45 @@ window.LogZenBacklog = (function () {
         </div>`;
     }
 
+    // Agrupa por projeto (ordem alfabética; "Sem projeto" sempre por
+    // último), preservando a ordenação já aplicada à lista recebida.
+    function agruparPorProjeto(lista) {
+        const grupos = new Map();
+        lista.forEach((t) => {
+            const chave = t.projeto || '';
+            if (!grupos.has(chave)) grupos.set(chave, []);
+            grupos.get(chave).push(t);
+        });
+        const nomes = Array.from(grupos.keys()).filter(Boolean).sort((a, b) => a.localeCompare(b));
+        const ordenado = nomes.map((nome) => ({ projeto: nome, tarefas: grupos.get(nome) }));
+        if (grupos.has('')) ordenado.push({ projeto: '', tarefas: grupos.get('') });
+        return ordenado;
+    }
+
+    function renderListaAgrupada(lista, renderItemFn) {
+        return agruparPorProjeto(lista).map((g) => `
+            <div data-grupo-projeto="${escapeHtml(g.projeto)}">
+                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
+                    <i aria-hidden="true" class="fa-solid fa-folder"></i> ${g.projeto ? escapeHtml(g.projeto) : 'Sem projeto'}
+                </p>
+                <div class="space-y-3 mb-3">${g.tarefas.map(renderItemFn).join('')}</div>
+            </div>`).join('');
+    }
+
     function render() {
         if (!root) return;
         const pendentes = window.LogZenBacklog.listarPendentes();
         const enviadas = window.LogZenBacklog.listarEnviados();
         const listaHtml = pendentes.length
-            ? pendentes.map(renderTarefa).join('')
+            ? renderListaAgrupada(pendentes, renderTarefa)
             : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhuma tarefa no backlog ainda.</p>';
         const enviadasHtml = `
         <details class="rounded-lg border border-gray-200 dark:border-gray-700">
             <summary class="px-3 py-2 text-sm font-medium cursor-pointer select-none">
                 <i aria-hidden="true" class="fa-solid fa-paper-plane mr-1"></i> Enviadas (${enviadas.length})
             </summary>
-            <div class="p-3 pt-0 space-y-3">
-                ${enviadas.length ? enviadas.map(renderEnviada).join('') : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhuma tarefa enviada ainda.</p>'}
+            <div class="p-3 pt-0">
+                ${enviadas.length ? renderListaAgrupada(enviadas, renderEnviada) : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhuma tarefa enviada ainda.</p>'}
             </div>
         </details>`;
         root.innerHTML = renderForm()
@@ -314,14 +361,26 @@ window.LogZenBacklog = (function () {
             }
         });
 
+        rootEl.addEventListener('change', (e) => {
+            const projetoSelect = e.target.closest('[data-field="projeto"]');
+            if (projetoSelect) {
+                const outroInput = projetoSelect.closest('div').querySelector('[data-field="projetoOutro"]');
+                if (outroInput) outroInput.hidden = projetoSelect.value !== '__outro__';
+            }
+        });
+
         rootEl.addEventListener('submit', (e) => {
             const form = e.target.closest('form[data-form-backlog]');
             if (!form) return;
             e.preventDefault();
             const acao = form.querySelector('[data-field="acao"]').value.trim();
             if (!acao) return;
+            const projetoSel = form.querySelector('[data-field="projeto"]').value;
+            const projeto = projetoSel === '__outro__'
+                ? form.querySelector('[data-field="projetoOutro"]').value.trim()
+                : projetoSel;
             const dados = {
-                projeto: form.querySelector('[data-field="projeto"]').value.trim(),
+                projeto,
                 acao,
                 prazoInicio: form.querySelector('[data-field="prazoInicio"]').value || '',
                 prazoFim: form.querySelector('[data-field="prazoFim"]').value || '',
