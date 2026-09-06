@@ -49,6 +49,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   criado). Excluir continua **sem apagar os registros já salvos**: o
   `id` interno nunca muda e o histórico por data permanece no
   armazenamento local, só o item deixa de aparecer (issue #6).
+- Todo item passa a ser editável/excluível em "Itens rastreados",
+  inclusive os do catálogo de fábrica — a etiqueta "Padrão" e a
+  restrição de somente leitura saíram. Editar/excluir um item padrão
+  não altera `logzen-items.js`: grava um ajuste local (nome/unidade/
+  opções) ou marca o id como escondido, sem tocar no histórico salvo
+  nem permitir que um item novo reaproveite o id de um item padrão
+  escondido (issue #8).
 
 ## [0.0.1] - Base inicial
 

@@ -440,9 +440,10 @@
 
     /* =====================================================================
        Gestão de itens (Configurações) — issue #6. Adicionar/editar/excluir
-       vive aqui, fora da tela "Hoje". Editar nunca muda o `id` do item, e
-       excluir só tira do catálogo — os registros já salvos por data
-       continuam no armazenamento local, associados ao mesmo id.
+       vive aqui, fora da tela "Hoje". Todo item é editável/excluível,
+       inclusive os do catálogo de fábrica (issue #8). Editar nunca muda o
+       `id` do item, e excluir só tira da lista — os registros já salvos
+       por data continuam no armazenamento local, associados ao mesmo id.
        ===================================================================== */
     // Alça de arrastar (issue #7) — comum a todo item, padrão ou customizado.
     function dragHandle(label) {
@@ -455,17 +456,6 @@
     function renderItemConfigRow(cat, item) {
         const detalhe = [TIPOS_LABEL[item.tipo] || item.tipo, item.unidade, (item.opcoes || []).join(', ')]
             .filter(Boolean).join(' · ');
-        if (!item.custom) {
-            return `
-            <div data-item-row data-cat="${cat.id}" data-item="${item.id}" class="flex items-center justify-between gap-2 py-3">
-                ${dragHandle(item.nome)}
-                <div class="min-w-0 flex-1">
-                    <p class="font-medium truncate">${escapeHtml(item.nome)}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhe)}</p>
-                </div>
-                <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">Padrão</span>
-            </div>`;
-        }
         return `
         <div data-item-row data-cat="${cat.id}" data-item="${item.id}">
             <div class="flex items-center justify-between gap-2 py-3">
@@ -583,7 +573,7 @@
                 const row = deleteBtn.closest('[data-item-row]');
                 const nome = row.querySelector('p.font-medium').textContent;
                 if (!window.confirm(`Excluir "${nome}"? Os registros já salvos para este item continuam guardados — ele só deixa de aparecer na tela e no catálogo.`)) return;
-                window.LogZenCatalog.removeCustomItem(row.dataset.cat, row.dataset.item);
+                window.LogZenCatalog.removeItem(row.dataset.cat, row.dataset.item);
                 renderItensConfig();
                 sincronizarHoje();
                 return;
@@ -635,7 +625,7 @@
                         return;
                     }
                 }
-                window.LogZenCatalog.updateCustomItem(editForm.dataset.cat, editForm.dataset.item, dados);
+                window.LogZenCatalog.updateItem(editForm.dataset.cat, editForm.dataset.item, dados);
                 renderItensConfig();
                 sincronizarHoje();
             }
