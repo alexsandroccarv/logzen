@@ -8,6 +8,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Livros: busca passa a tentar a **Google Books** primeiro (com a Open
+  Library como segunda fonte, quando a primeira não encontra) e aceita
+  **ISBN** (10 ou 13 dígitos, com ou sem hífen) além de título — o
+  mesmo campo detecta automaticamente qual é o caso (issue #25).
 - Livros: Google Books API como segunda fonte de busca — quando a Open
   Library não encontra o título (comum para livros indies/menos
   conhecidos), cai automaticamente para o Google Books (também
