@@ -8,6 +8,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Backlog: o campo "Projeto" virou um seletor com os projetos já usados
+  (evita duplicar por variação de digitação), com opção "Outro" para
+  criar um novo; a lista de tarefas (pendentes e enviadas) passa a ser
+  agrupada por projeto, com "Sem projeto" sempre por último.
 - Nova aba "Podcasts": controle de assinaturas (busca via iTunes Search
   API — pública, sem chave — trazendo capa, autor/apresentador,
   categoria e link; cadastro manual também disponível) e episódios
