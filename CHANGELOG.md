@@ -7,6 +7,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Fixed
+- Livros: mensagem de erro mais clara quando Google Books e Open
+  Library falham as duas (ex.: cota anônima do Google Books
+  esgotada — é por IP e pode ser consumida por outros usuários da
+  mesma rede) — em vez de repetir só o erro da Open Library, avisa que
+  as duas tentativas falharam e sugere registrar manualmente (issue #25).
+
 ### Changed
 - Versão inicial do app começa sem nenhuma categoria/item ativado na
   tela "Hoje": as 5 categorias que antes vinham sempre ativas

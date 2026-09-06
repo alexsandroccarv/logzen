@@ -107,13 +107,23 @@ window.LogZenLivros = (function () {
         });
     }
 
-    // Tenta a Google Books primeiro; se não achar nada (ou falhar), cai
+    // Tenta a Google Books primeiro; se não achar nada (ou falhar — a cota
+    // anônima do Google Books é por IP e pode ser consumida por outros
+    // usuários da mesma rede/operadora, então falha de vez em quando), cai
     // para a Open Library — segunda fonte, também sem exigir chave.
     async function buscarPorTitulo(query) {
         let resultados = [];
-        try { resultados = await buscarGoogleBooks(query); } catch (e) { resultados = []; }
+        let erroGoogleBooks = null;
+        try { resultados = await buscarGoogleBooks(query); } catch (e) { erroGoogleBooks = e; }
         if (resultados.length) return resultados;
-        return buscarOpenLibrary(query);
+        try {
+            return await buscarOpenLibrary(query);
+        } catch (e) {
+            // As duas fontes falharam — avisa isso de forma clara, em vez de
+            // só repetir o erro da Open Library como se fosse a única tentada.
+            if (erroGoogleBooks) throw new Error('Google Books e Open Library falharam — tente de novo em instantes, ou registre manualmente.');
+            throw e;
+        }
     }
 
     return { listar, salvar, remover, labelIdioma, buscarPorTitulo };
