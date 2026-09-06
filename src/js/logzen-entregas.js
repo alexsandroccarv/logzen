@@ -49,6 +49,20 @@ window.LogZenEntregas = (function () {
         writeEntries(readEntries().filter((e) => e.id !== id));
     }
 
+    function obter(id) {
+        return readEntries().find((e) => e.id === id);
+    }
+
+    // Atualiza os dados cadastrais de uma entrega já existente (nome, datas,
+    // loja, rastreio, observações) sem mexer no estado de entregue/arquivo.
+    function atualizar(id, dados) {
+        const lista = readEntries();
+        const item = lista.find((e) => e.id === id);
+        if (!item) return;
+        Object.assign(item, dados);
+        writeEntries(lista);
+    }
+
     // Marca como entregue (move para o arquivo) ou desfaz, voltando a
     // "aguardando entrega" — o registro nunca é apagado, só muda de estado.
     function marcarEntregue(id, dataEntrega) {
@@ -69,7 +83,7 @@ window.LogZenEntregas = (function () {
         writeEntries(lista);
     }
 
-    return { listarPendentes, listarArquivadas, salvar, remover, marcarEntregue, desmarcarEntregue };
+    return { listarPendentes, listarArquivadas, salvar, remover, obter, atualizar, marcarEntregue, desmarcarEntregue };
 })();
 
 (function () {
@@ -84,49 +98,59 @@ window.LogZenEntregas = (function () {
     }
 
     let root = null;
+    // id da entrega em edição (null = nenhuma edição em andamento, e o
+    // formulário serve para cadastrar uma entrega nova).
+    let editandoId = null;
 
     function renderForm() {
         const hoje = window.LogZenData.todayKey();
+        const editando = editandoId ? window.LogZenEntregas.obter(editandoId) : null;
+        const v = editando || { nome: '', dataCompra: hoje, dataPrevisao: '', loja: '', rastreio: '', observacoes: '' };
+        const cabecalho = editando
+            ? `<p class="text-sm font-medium text-brand-700 dark:text-accent-400 flex items-center gap-1.5">
+                   <i aria-hidden="true" class="fa-solid fa-pen"></i> Editando "${escapeHtml(editando.nome)}"
+               </p>`
+            : `<button type="button" data-action="toggle-add-entrega" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
+                   <i aria-hidden="true" class="fa-solid fa-plus"></i> Registrar entrega
+               </button>`;
         return `
         <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 space-y-3">
-            <button type="button" data-action="toggle-add-entrega" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
-                <i aria-hidden="true" class="fa-solid fa-plus"></i> Registrar entrega
-            </button>
-            <form data-form-entrega hidden class="space-y-3">
+            ${cabecalho}
+            <form data-form-entrega ${editando ? '' : 'hidden'} class="space-y-3">
                 <div>
                     <label class="block text-xs font-medium mb-1">Nome</label>
-                    <input type="text" data-field="nome" required maxlength="150" placeholder="O que você comprou?"
+                    <input type="text" data-field="nome" required maxlength="150" placeholder="O que você comprou?" value="${escapeHtml(v.nome)}"
                         class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium mb-1">Data da compra</label>
-                        <input type="date" data-field="dataCompra" value="${hoje}" max="${hoje}"
+                        <input type="date" data-field="dataCompra" value="${v.dataCompra || hoje}" max="${hoje}"
                             class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                     </div>
                     <div>
                         <label class="block text-xs font-medium mb-1">Previsão de entrega</label>
-                        <input type="date" data-field="dataPrevisao"
+                        <input type="date" data-field="dataPrevisao" value="${v.dataPrevisao || ''}"
                             class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Loja/e-commerce</label>
-                    <input type="text" data-field="loja" maxlength="100" placeholder="ex.: Amazon, Mercado Livre…"
+                    <input type="text" data-field="loja" maxlength="100" placeholder="ex.: Amazon, Mercado Livre…" value="${escapeHtml(v.loja || '')}"
                         class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Número de rastreio</label>
-                    <input type="text" data-field="rastreio" maxlength="60" placeholder="ex.: BR123456789BR"
+                    <input type="text" data-field="rastreio" maxlength="60" placeholder="ex.: BR123456789BR" value="${escapeHtml(v.rastreio || '')}"
                         class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-400">
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Observações</label>
                     <textarea data-field="observacoes" rows="2" maxlength="500" placeholder="Opcional"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"></textarea>
+                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(v.observacoes || '')}</textarea>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Salvar</button>
+                    <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">${editando ? 'Salvar alterações' : 'Salvar'}</button>
                     <button type="button" data-action="cancelar-entrega" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
                 </div>
             </form>
@@ -156,10 +180,16 @@ window.LogZenEntregas = (function () {
                     ${previsaoHtml}
                     ${e.observacoes ? `<p class="text-sm mt-1">${escapeHtml(e.observacoes)}</p>` : ''}
                 </div>
-                <button type="button" data-action="remover-entrega" aria-label="Remover ${escapeHtml(e.nome)}"
-                    class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
-                    <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
-                </button>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" data-action="editar-entrega" aria-label="Editar ${escapeHtml(e.nome)}"
+                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button type="button" data-action="remover-entrega" aria-label="Remover ${escapeHtml(e.nome)}"
+                        class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                </div>
             </div>
             <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                 <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
@@ -188,6 +218,10 @@ window.LogZenEntregas = (function () {
                     ${e.observacoes ? `<p class="text-sm mt-1">${escapeHtml(e.observacoes)}</p>` : ''}
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" data-action="editar-entrega" aria-label="Editar ${escapeHtml(e.nome)}"
+                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
+                    </button>
                     <button type="button" data-action="desfazer-entrega" aria-label="Desfazer entrega de ${escapeHtml(e.nome)}" title="Voltar para aguardando entrega"
                         class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-rotate-left text-xs"></i>
@@ -233,9 +267,22 @@ window.LogZenEntregas = (function () {
 
             const cancelarBtn = e.target.closest('[data-action="cancelar-entrega"]');
             if (cancelarBtn) {
-                const form = cancelarBtn.closest('form[data-form-entrega]');
-                form.reset();
-                form.hidden = true;
+                if (editandoId) {
+                    editandoId = null;
+                    render();
+                } else {
+                    const form = cancelarBtn.closest('form[data-form-entrega]');
+                    form.reset();
+                    form.hidden = true;
+                }
+                return;
+            }
+
+            const editarBtn = e.target.closest('[data-action="editar-entrega"]');
+            if (editarBtn) {
+                const card = editarBtn.closest('[data-entrega-entrada], [data-entrega-arquivada]');
+                editandoId = card.dataset.id;
+                render();
                 return;
             }
 
@@ -245,6 +292,7 @@ window.LogZenEntregas = (function () {
                 const nome = card.querySelector('p.font-semibold').textContent;
                 if (!window.confirm(`Remover "${nome}" da lista?`)) return;
                 window.LogZenEntregas.remover(card.dataset.id);
+                if (editandoId === card.dataset.id) editandoId = null;
                 render();
                 return;
             }
@@ -289,9 +337,7 @@ window.LogZenEntregas = (function () {
             e.preventDefault();
             const nome = form.querySelector('[data-field="nome"]').value.trim();
             if (!nome) return;
-            const entrada = {
-                id: gerarId(),
-                criadoEm: Date.now(),
+            const dados = {
                 nome,
                 dataCompra: form.querySelector('[data-field="dataCompra"]').value || '',
                 dataPrevisao: form.querySelector('[data-field="dataPrevisao"]').value || '',
@@ -299,7 +345,12 @@ window.LogZenEntregas = (function () {
                 rastreio: form.querySelector('[data-field="rastreio"]').value.trim(),
                 observacoes: form.querySelector('[data-field="observacoes"]').value.trim(),
             };
-            window.LogZenEntregas.salvar(entrada);
+            if (editandoId) {
+                window.LogZenEntregas.atualizar(editandoId, dados);
+                editandoId = null;
+            } else {
+                window.LogZenEntregas.salvar({ id: gerarId(), criadoEm: Date.now(), ...dados });
+            }
             render();
         });
     }

@@ -40,6 +40,18 @@ window.LogZenFilmes = (function () {
         writeEntries(readEntries().filter((e) => e.id !== id));
     }
 
+    function obter(id) {
+        return readEntries().find((e) => e.id === id);
+    }
+
+    function atualizar(id, dados) {
+        const lista = readEntries();
+        const item = lista.find((e) => e.id === id);
+        if (!item) return;
+        Object.assign(item, dados);
+        writeEntries(lista);
+    }
+
     function getApiKey() {
         try { return localStorage.getItem(APIKEY_KEY) || ''; }
         catch (e) { return ''; }
@@ -72,7 +84,7 @@ window.LogZenFilmes = (function () {
         return dados;
     }
 
-    return { listar, salvar, remover, getApiKey, setApiKey, buscarPorTitulo, buscarDetalhes };
+    return { listar, salvar, remover, obter, atualizar, getApiKey, setApiKey, buscarPorTitulo, buscarDetalhes };
 })();
 
 (function () {
@@ -93,6 +105,8 @@ window.LogZenFilmes = (function () {
     // Entrada em construção (resultado de busca escolhido, ou manual) antes
     // de ser salva — estado só em memória, não persiste até "Salvar".
     let rascunho = null;
+    // id do registro em edição (null = rascunho é uma entrada nova).
+    let editandoId = null;
 
     function estrelasBtns(valorAtual) {
         return Array.from({ length: 5 }, (_, i) => i + 1).map((n) => `
@@ -216,7 +230,7 @@ window.LogZenFilmes = (function () {
                     class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(rascunho.opiniao || '')}</textarea>
             </div>
             <div class="flex items-center gap-2">
-                <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Salvar</button>
+                <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">${editandoId ? 'Salvar alterações' : 'Salvar'}</button>
                 <button type="button" data-action="cancelar-rascunho" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
             </div>
         </form>`;
@@ -275,10 +289,16 @@ window.LogZenFilmes = (function () {
                         ${episodioTexto ? `<p class="text-xs font-medium text-brand-700 dark:text-accent-400 truncate">${escapeHtml(episodioTexto)}</p>` : ''}
                         <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)} · assistido em ${dataFmt}</p>
                     </div>
-                    <button type="button" data-action="remover-filme" aria-label="Remover ${escapeHtml(e.titulo)}"
-                        class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
-                        <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
-                    </button>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button type="button" data-action="editar-filme" aria-label="Editar ${escapeHtml(e.titulo)}"
+                            class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                            <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button type="button" data-action="remover-filme" aria-label="Remover ${escapeHtml(e.titulo)}"
+                            class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                            <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
                 </div>
                 ${e.premios ? `<p class="text-xs text-amber-600 dark:text-amber-400 mt-1"><i aria-hidden="true" class="fa-solid fa-trophy mr-1"></i>${escapeHtml(e.premios)}</p>` : ''}
                 <div class="mt-1">${estrelas}</div>
@@ -347,6 +367,28 @@ window.LogZenFilmes = (function () {
             const cancelarBtn = e.target.closest('[data-action="cancelar-rascunho"]');
             if (cancelarBtn) {
                 rascunho = null;
+                editandoId = null;
+                render();
+                return;
+            }
+
+            const editarBtn = e.target.closest('[data-action="editar-filme"]');
+            if (editarBtn) {
+                const card = editarBtn.closest('[data-filme-entrada]');
+                const entrada = window.LogZenFilmes.obter(card.dataset.id);
+                if (!entrada) return;
+                // Serviço "Outro" não fica salvo como "outro" — o texto digitado
+                // é salvo direto. Se não bater com nenhum serviço da lista,
+                // reconstrói o estado do select em "Outro" + o texto no campo.
+                const servicoConhecido = SERVICOS_STREAMING.includes(entrada.servico);
+                const eraOutro = entrada.local === 'streaming' && entrada.servico && !servicoConhecido;
+                rascunho = {
+                    ...entrada,
+                    manual: true,
+                    servico: eraOutro ? 'outro' : (entrada.servico || ''),
+                    servicoOutro: eraOutro ? entrada.servico : '',
+                };
+                editandoId = entrada.id;
                 render();
                 return;
             }
@@ -373,6 +415,7 @@ window.LogZenFilmes = (function () {
                 const titulo = card.querySelector('p.font-semibold').textContent;
                 if (!window.confirm(`Remover "${titulo}" da lista?`)) return;
                 window.LogZenFilmes.remover(card.dataset.id);
+                if (editandoId === card.dataset.id) { rascunho = null; editandoId = null; }
                 render();
                 return;
             }
@@ -448,9 +491,16 @@ window.LogZenFilmes = (function () {
                     rascunho.episodio = '';
                     rascunho.episodioTitulo = '';
                 }
-                const entrada = { ...rascunho, id: gerarId(), criadoEm: Date.now() };
+                const entrada = { ...rascunho };
                 delete entrada.manual;
-                window.LogZenFilmes.salvar(entrada);
+                if (editandoId) {
+                    window.LogZenFilmes.atualizar(editandoId, entrada);
+                    editandoId = null;
+                } else {
+                    entrada.id = gerarId();
+                    entrada.criadoEm = Date.now();
+                    window.LogZenFilmes.salvar(entrada);
+                }
                 rascunho = null;
                 render();
             }

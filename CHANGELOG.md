@@ -8,6 +8,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Editar um registro já cadastrado, em vez de só adicionar/remover:
+  botão "Editar" em Entregas (na lista ativa e no arquivo) e em
+  Filmes/séries, reabrindo o formulário preenchido com os dados atuais
+  — salvar atualiza o mesmo registro (mesmo `id`), sem criar um
+  duplicado (issue #17).
 - Entregas: campo "Entregue" (checkbox + data) em cada entrega aguardando
   recebimento. Ao marcar, confirma a data (padrão hoje, editável) e o
   registro sai da lista ativa e vai para uma seção "Arquivo" (recolhível),
