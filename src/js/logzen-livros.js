@@ -2,16 +2,24 @@
    LogZen — Livros (issue #14): registro de livros lidos, com busca de
    metadados (capa, autor, editora, páginas) via Open Library API — gratuita
    e sem chave (diferente da OMDb usada em Filmes), então a busca funciona
-   direto, sem nenhuma configuração. Fallback de registro manual sempre
-   disponível. Leitura tem início e fim (fim em branco = ainda lendo).
+   direto, sem nenhuma configuração. Se a Open Library não encontrar nada
+   (comum para livros indies/menos conhecidos), cai automaticamente para a
+   Google Books API (issue #24) — também gratuita/sem chave em volume baixo.
+   Os resultados das duas fontes são normalizados para o mesmo formato antes
+   de exibir. Fallback de registro manual sempre disponível. Leitura tem
+   início e fim (fim em branco = ainda lendo).
    ========================================================================== */
 window.LogZenLivros = (function () {
     const ENTRIES_KEY = 'logzen:livros:v1';
 
+    // Open Library usa códigos de 3 letras (ISO 639-2); Google Books usa
+    // 2 letras (ISO 639-1) — o mapa cobre os dois formatos.
     const IDIOMA_LABEL = {
         eng: 'Inglês', por: 'Português', spa: 'Espanhol', fre: 'Francês', fra: 'Francês',
         ger: 'Alemão', deu: 'Alemão', ita: 'Italiano', jpn: 'Japonês', chi: 'Chinês',
         zho: 'Chinês', rus: 'Russo', ara: 'Árabe', kor: 'Coreano', dut: 'Holandês', nld: 'Holandês',
+        en: 'Inglês', pt: 'Português', es: 'Espanhol', fr: 'Francês', de: 'Alemão',
+        it: 'Italiano', ja: 'Japonês', zh: 'Chinês', ru: 'Russo', ar: 'Árabe', ko: 'Coreano', nl: 'Holandês',
     };
 
     function readEntries() {
@@ -49,11 +57,51 @@ window.LogZenLivros = (function () {
         return IDIOMA_LABEL[codigo] || codigo;
     }
 
-    async function buscarPorTitulo(query) {
+    async function buscarOpenLibrary(query) {
         const resp = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&fields=key,title,author_name,first_publish_year,cover_i,publisher,number_of_pages_median,language&limit=10`);
         if (!resp.ok) throw new Error('Falha ao conectar com a Open Library.');
         const dados = await resp.json();
-        return (dados.docs || []).filter((d) => d.title);
+        return (dados.docs || []).filter((d) => d.title).map((item) => ({
+            id: `ol:${item.key}`,
+            titulo: item.title,
+            autor: (item.author_name || []).join(', '),
+            ano: item.first_publish_year || '',
+            capa: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : '',
+            editora: (item.publisher || [])[0] || '',
+            paginas: item.number_of_pages_median || '',
+            idioma: labelIdioma((item.language || [])[0]),
+            fonte: 'Open Library',
+        }));
+    }
+
+    async function buscarGoogleBooks(query) {
+        const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10`);
+        if (!resp.ok) throw new Error('Falha ao conectar com o Google Books.');
+        const dados = await resp.json();
+        return (dados.items || []).filter((it) => it.volumeInfo && it.volumeInfo.title).map((it) => {
+            const v = it.volumeInfo;
+            const capa = v.imageLinks ? (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail || '') : '';
+            return {
+                id: `gb:${it.id}`,
+                titulo: v.title,
+                autor: (v.authors || []).join(', '),
+                ano: (v.publishedDate || '').slice(0, 4),
+                capa: capa.replace(/^http:/, 'https:'),
+                editora: v.publisher || '',
+                paginas: v.pageCount || '',
+                idioma: labelIdioma(v.language),
+                fonte: 'Google Books',
+            };
+        });
+    }
+
+    // Tenta a Open Library primeiro; se não achar nada (ou falhar), cai
+    // para a Google Books — segunda fonte, também sem exigir chave.
+    async function buscarPorTitulo(query) {
+        let resultados = [];
+        try { resultados = await buscarOpenLibrary(query); } catch (e) { resultados = []; }
+        if (resultados.length) return resultados;
+        return buscarGoogleBooks(query);
     }
 
     return { listar, salvar, remover, labelIdioma, buscarPorTitulo };
@@ -84,17 +132,15 @@ window.LogZenLivros = (function () {
     }
 
     function renderResultadoBusca(item) {
-        const capa = item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : '';
-        const autor = (item.author_name || [])[0] || '';
         return `
-        <button type="button" data-action="selecionar-resultado" data-key="${escapeHtml(item.key)}"
+        <button type="button" data-action="selecionar-resultado" data-id="${escapeHtml(item.id)}"
             class="w-full flex items-center gap-3 p-2 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-left">
-            ${capa
-                ? `<img src="${escapeHtml(capa)}" alt="" class="w-10 h-14 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
+            ${item.capa
+                ? `<img src="${escapeHtml(item.capa)}" alt="" class="w-10 h-14 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
                 : `<div class="w-10 h-14 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-book"></i></div>`}
             <div class="min-w-0">
-                <p class="font-medium truncate">${escapeHtml(item.title)}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml([autor, item.first_publish_year].filter(Boolean).join(' · '))}</p>
+                <p class="font-medium truncate">${escapeHtml(item.titulo)}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml([item.autor, item.ano].filter(Boolean).join(' · '))}</p>
             </div>
         </button>`;
     }
@@ -259,16 +305,16 @@ window.LogZenLivros = (function () {
             const selecionarBtn = e.target.closest('[data-action="selecionar-resultado"]');
             if (selecionarBtn) {
                 const resultados = rootEl.__ultimaBusca || [];
-                const item = resultados.find((d) => d.key === selecionarBtn.dataset.key);
+                const item = resultados.find((d) => d.id === selecionarBtn.dataset.id);
                 if (!item) return;
                 rascunho = {
                     manual: false,
-                    titulo: item.title,
-                    autor: (item.author_name || []).join(', '),
-                    capa: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : '',
-                    editora: (item.publisher || [])[0] || '',
-                    idioma: window.LogZenLivros.labelIdioma((item.language || [])[0]),
-                    paginas: item.number_of_pages_median || '',
+                    titulo: item.titulo,
+                    autor: item.autor,
+                    capa: item.capa,
+                    editora: item.editora,
+                    idioma: item.idioma,
+                    paginas: item.paginas,
                     dataInicio: window.LogZenData.todayKey(),
                     dataFim: '',
                     estrelas: 0,
@@ -330,8 +376,13 @@ window.LogZenLivros = (function () {
                             : '';
                     }
                     if (status) {
-                        if (resultados.length) status.classList.add('hidden');
-                        else { status.textContent = 'Nada encontrado.'; status.classList.remove('hidden'); }
+                        if (!resultados.length) { status.textContent = 'Nada encontrado.'; status.classList.remove('hidden'); }
+                        else if (resultados[0].fonte === 'Google Books') {
+                            status.textContent = 'A Open Library não encontrou nada — resultados via Google Books.';
+                            status.classList.remove('hidden');
+                        } else {
+                            status.classList.add('hidden');
+                        }
                     }
                 } catch (err) {
                     if (resultadosEl) resultadosEl.innerHTML = '';
