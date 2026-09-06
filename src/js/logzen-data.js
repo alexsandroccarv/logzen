@@ -70,6 +70,21 @@ window.LogZenData = (function () {
         return streak;
     }
 
+    function getItemNota(dateKey, categoriaId, itemId) {
+        const cat = getEntry(dateKey)[categoriaId];
+        return (cat && cat.notas && cat.notas[itemId]) || '';
+    }
+
+    function setItemNota(dateKey, categoriaId, itemId, texto) {
+        const all = readAll();
+        if (!all[dateKey]) all[dateKey] = {};
+        if (!all[dateKey][categoriaId]) all[dateKey][categoriaId] = {};
+        if (!all[dateKey][categoriaId].notas) all[dateKey][categoriaId].notas = {};
+        if (texto) all[dateKey][categoriaId].notas[itemId] = texto;
+        else delete all[dateKey][categoriaId].notas[itemId];
+        writeAll(all);
+    }
+
     function getNota(dateKey) {
         return getEntry(dateKey).nota || '';
     }
@@ -90,5 +105,8 @@ window.LogZenData = (function () {
         if (parsed && typeof parsed === 'object') writeAll(parsed);
     }
 
-    return { todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado, getNota, setNota, exportJSON, importJSON };
+    return {
+        todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado,
+        getItemNota, setItemNota, getNota, setNota, exportJSON, importJSON,
+    };
 })();

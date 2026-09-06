@@ -34,25 +34,48 @@
         </button>`;
     }
 
+    // Nota curta por item, fechada por padrão — issue #3. O ícone de lápis
+    // muda de cor quando já existe uma nota salva, mesmo com a caixa fechada.
+    function notaBtn(item, temNota) {
+        return `<button type="button" data-action="toggle-nota" aria-expanded="false" aria-label="Nota sobre ${escapeHtml(item.nome)}"
+            class="w-7 h-7 shrink-0 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 ${temNota ? 'text-brand-600 dark:text-accent-400' : 'text-gray-400'}">
+            <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
+        </button>`;
+    }
+
+    function notaBox(cat, item, dateKey) {
+        const nota = window.LogZenData.getItemNota(dateKey, cat.id, item.id);
+        return `<div data-nota-wrap hidden class="pt-2">
+            <textarea data-item-nota rows="2" maxlength="300" placeholder="Nota sobre ${escapeHtml(item.nome)} (opcional)"
+                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(nota)}</textarea>
+        </div>`;
+    }
+
     function renderContador(cat, item, dateKey) {
         const valor = window.LogZenData.getItemValue(dateKey, cat.id, item.id, 0);
+        const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         return `
-        <div class="flex items-center justify-between gap-3 py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador" data-nome="${escapeHtml(item.nome)}">
-            <span class="font-medium">${escapeHtml(item.nome)}<span class="block text-xs font-normal text-gray-500 dark:text-gray-400">${escapeHtml(item.unidade || '')}</span></span>
-            <div class="flex items-center gap-2 shrink-0">
-                <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold">−</button>
-                <span data-value class="w-10 text-center font-mono text-lg tabular-nums">${valor}</span>
-                <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold">+</button>
-                ${item.passoRapido ? `<button type="button" data-action="quick" data-amount="${item.passoRapido}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+${item.passoRapido}</button>` : ''}
-                ${item.passoLitro ? `<button type="button" data-action="quick" data-amount="${item.passoLitro}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+1L</button>` : ''}
-                ${trashBtn(item)}
+        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador" data-nome="${escapeHtml(item.nome)}">
+            <div class="flex items-center justify-between gap-3">
+                <span class="font-medium">${escapeHtml(item.nome)}<span class="block text-xs font-normal text-gray-500 dark:text-gray-400">${escapeHtml(item.unidade || '')}</span></span>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold">−</button>
+                    <span data-value class="w-10 text-center font-mono text-lg tabular-nums">${valor}</span>
+                    <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold">+</button>
+                    ${item.passoRapido ? `<button type="button" data-action="quick" data-amount="${item.passoRapido}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+${item.passoRapido}</button>` : ''}
+                    ${item.passoLitro ? `<button type="button" data-action="quick" data-amount="${item.passoLitro}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+1L</button>` : ''}
+                    ${notaBtn(item, temNota)}
+                    ${trashBtn(item)}
+                </div>
             </div>
+            ${notaBox(cat, item, dateKey)}
         </div>`;
     }
 
     function renderContadorInverso(cat, item, dateKey) {
         const valor = window.LogZenData.getItemValue(dateKey, cat.id, item.id, 0);
         const streak = window.LogZenData.streakZerado(cat.id, item.id, dateKey);
+        const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         return `
         <div data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador-inverso" data-nome="${escapeHtml(item.nome)}" class="rounded-lg border p-3 my-2 transition-colors ${corVicio(valor)}">
             <div class="flex items-center justify-between gap-3">
@@ -61,27 +84,37 @@
                     <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-current/40 hover:bg-black/5 dark:hover:bg-white/10 font-bold">−</button>
                     <span data-value class="w-10 text-center font-mono text-lg tabular-nums">${valor}</span>
                     <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-current/40 hover:bg-black/5 dark:hover:bg-white/10 font-bold">+</button>
+                    ${notaBtn(item, temNota)}
                     ${trashBtn(item)}
                 </div>
             </div>
             <p data-streak class="text-xs mt-2 flex items-center gap-1"><i aria-hidden="true" class="fa-solid fa-fire"></i> ${streak} dia(s) sem "${escapeHtml(item.nome)}"</p>
+            ${notaBox(cat, item, dateKey)}
         </div>`;
     }
 
     function renderCheckbox(cat, item, dateKey) {
         const marcado = !!window.LogZenData.getItemValue(dateKey, cat.id, item.id, false);
+        const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         return `
-        <div class="flex items-center justify-between gap-3 py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="checkbox" data-nome="${escapeHtml(item.nome)}">
-            <label class="flex items-center gap-3 flex-1 cursor-pointer">
-                <input type="checkbox" data-action="checkbox" class="w-5 h-5 accent-brand-600 dark:accent-accent-500" ${marcado ? 'checked' : ''} aria-label="${escapeHtml(item.nome)}">
-                <span class="font-medium">${escapeHtml(item.nome)}</span>
-            </label>
-            ${trashBtn(item)}
+        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="checkbox" data-nome="${escapeHtml(item.nome)}">
+            <div class="flex items-center justify-between gap-3">
+                <label class="flex items-center gap-3 flex-1 cursor-pointer">
+                    <input type="checkbox" data-action="checkbox" class="w-5 h-5 accent-brand-600 dark:accent-accent-500" ${marcado ? 'checked' : ''} aria-label="${escapeHtml(item.nome)}">
+                    <span class="font-medium">${escapeHtml(item.nome)}</span>
+                </label>
+                <div class="flex items-center gap-2 shrink-0">
+                    ${notaBtn(item, temNota)}
+                    ${trashBtn(item)}
+                </div>
+            </div>
+            ${notaBox(cat, item, dateKey)}
         </div>`;
     }
 
     function renderEscala(cat, item, dateKey) {
         const valor = window.LogZenData.getItemValue(dateKey, cat.id, item.id, 0);
+        const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         const estrelas = Array.from({ length: item.max || 5 }, (_, i) => i + 1).map((n) => `
             <button type="button" data-action="star" data-n="${n}" aria-pressed="${n <= valor}" aria-label="${n} de ${item.max || 5}"
                 class="text-2xl leading-none ${n <= valor ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
@@ -91,14 +124,19 @@
         <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="escala" data-nome="${escapeHtml(item.nome)}">
             <div class="flex items-center justify-between gap-3 mb-1">
                 <p class="font-medium m-0">${escapeHtml(item.nome)}</p>
-                ${trashBtn(item)}
+                <div class="flex items-center gap-2 shrink-0">
+                    ${notaBtn(item, temNota)}
+                    ${trashBtn(item)}
+                </div>
             </div>
             <div class="flex gap-1" role="radiogroup" aria-label="${escapeHtml(item.nome)}">${estrelas}</div>
+            ${notaBox(cat, item, dateKey)}
         </div>`;
     }
 
     function renderTags(cat, item, dateKey) {
         const selecionadas = window.LogZenData.getItemValue(dateKey, cat.id, item.id, []);
+        const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         const pills = (item.opcoes || []).map((tag) => {
             const ativo = selecionadas.includes(tag);
             return `<button type="button" data-action="tag" data-tag="${escapeHtml(tag)}" aria-pressed="${ativo}"
@@ -108,9 +146,13 @@
         <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="tags" data-nome="${escapeHtml(item.nome)}">
             <div class="flex items-center justify-between gap-3 mb-2">
                 <p class="font-medium m-0">${escapeHtml(item.nome)}</p>
-                ${trashBtn(item)}
+                <div class="flex items-center gap-2 shrink-0">
+                    ${notaBtn(item, temNota)}
+                    ${trashBtn(item)}
+                </div>
             </div>
             <div class="flex flex-wrap gap-2">${pills}</div>
+            ${notaBox(cat, item, dateKey)}
         </div>`;
     }
 
@@ -229,6 +271,23 @@
 
     const salvarNotaDebounced = debounce((dateKey, valor) => window.LogZenData.setNota(dateKey, valor), 400);
 
+    // Debounce por textarea (cada item tem a sua, independente das demais).
+    const timersNotaItem = new WeakMap();
+    function salvarNotaItemDebounced(el, dateKey, cat, item) {
+        clearTimeout(timersNotaItem.get(el));
+        timersNotaItem.set(el, setTimeout(() => {
+            const texto = el.value.trim();
+            window.LogZenData.setItemNota(dateKey, cat, item, texto);
+            const row = el.closest('[data-row]');
+            const btn = row && row.querySelector('[data-action="toggle-nota"]');
+            if (btn) {
+                btn.classList.toggle('text-brand-600', !!texto);
+                btn.classList.toggle('dark:text-accent-400', !!texto);
+                btn.classList.toggle('text-gray-400', !texto);
+            }
+        }, 400));
+    }
+
     function wire(root, dateKey) {
         root.addEventListener('click', (e) => {
             const toggleBtn = e.target.closest('[data-action="toggle-add-form"]');
@@ -248,6 +307,16 @@
                 form.reset();
                 syncFieldGroups(form);
                 form.hidden = true;
+                return;
+            }
+
+            const notaToggle = e.target.closest('[data-action="toggle-nota"]');
+            if (notaToggle) {
+                const row = notaToggle.closest('[data-row]');
+                const wrap = row.querySelector('[data-nota-wrap]');
+                wrap.hidden = !wrap.hidden;
+                notaToggle.setAttribute('aria-expanded', String(!wrap.hidden));
+                if (!wrap.hidden) wrap.querySelector('textarea').focus();
                 return;
             }
 
@@ -326,7 +395,15 @@
         });
 
         root.addEventListener('input', (e) => {
-            if (e.target.matches('[data-nota]')) salvarNotaDebounced(dateKey, e.target.value);
+            if (e.target.matches('[data-nota]')) {
+                salvarNotaDebounced(dateKey, e.target.value);
+                return;
+            }
+            if (e.target.matches('[data-item-nota]')) {
+                const row = e.target.closest('[data-row]');
+                if (!row) return;
+                salvarNotaItemDebounced(e.target, dateKey, row.dataset.cat, row.dataset.item);
+            }
         });
 
         root.addEventListener('submit', (e) => {

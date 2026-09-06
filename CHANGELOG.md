@@ -22,6 +22,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   itens customizados podem ser removidos (os do catálogo padrão não).
   Nota do dia: campo de texto livre e opcional no lançamento diário
   (issue #2).
+- Nota por item: todo item da tela "Hoje" (padrão ou customizado, de
+  qualquer tipo) ganhou um ícone de lápis que abre uma caixa de texto
+  curta e opcional (fechada por padrão); o ícone muda de cor quando já
+  existe uma nota salva para aquele item, mesmo com a caixa fechada
+  (issue #3).
 
 ## [0.0.1] - Base inicial
 
