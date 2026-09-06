@@ -8,6 +8,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Filmes: dois novos tipos no cadastro manual, **Show** e **Palestra**
+  (além de Filme e Série), e **YouTube** como opção em "Onde assistiu"
+  (junto de TV aberta, Cinema e Streaming) (issue #18).
 - Editar um registro já cadastrado, em vez de só adicionar/remover:
   botão "Editar" em Entregas (na lista ativa e no arquivo) e em
   Filmes/séries, reabrindo o formulário preenchido com os dados atuais

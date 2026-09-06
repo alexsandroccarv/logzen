@@ -89,8 +89,8 @@ window.LogZenFilmes = (function () {
 
 (function () {
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
-    const TIPO_LABEL = { movie: 'Filme', series: 'Série', episode: 'Episódio' };
-    const LOCAL_LABEL = { tv_aberta: 'TV aberta', cinema: 'Cinema', streaming: 'Streaming' };
+    const TIPO_LABEL = { movie: 'Filme', series: 'Série', episode: 'Episódio', show: 'Show', palestra: 'Palestra' };
+    const LOCAL_LABEL = { tv_aberta: 'TV aberta', cinema: 'Cinema', streaming: 'Streaming', youtube: 'YouTube' };
     const SERVICOS_STREAMING = ['Netflix', 'Mubi', 'HBO Max', 'Amazon Prime Video', 'Apple TV+', 'Disney+', 'Globoplay', 'Star+', 'Paramount+', 'Outro'];
 
     function escapeHtml(s) {
@@ -143,6 +143,7 @@ window.LogZenFilmes = (function () {
                 <option value="tv_aberta" ${r.local === 'tv_aberta' ? 'selected' : ''}>TV aberta</option>
                 <option value="cinema" ${r.local === 'cinema' ? 'selected' : ''}>Cinema</option>
                 <option value="streaming" ${r.local === 'streaming' ? 'selected' : ''}>Streaming</option>
+                <option value="youtube" ${r.local === 'youtube' ? 'selected' : ''}>YouTube</option>
             </select>
         </div>
         <div data-streaming-campos ${streamingHidden}>
@@ -195,8 +196,10 @@ window.LogZenFilmes = (function () {
             <div>
                 <label class="block text-xs font-medium mb-1">Tipo</label>
                 <select data-field="tipo" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                    <option value="movie" ${rascunho.tipo !== 'series' ? 'selected' : ''}>Filme</option>
+                    <option value="movie" ${!rascunho.tipo || rascunho.tipo === 'movie' ? 'selected' : ''}>Filme</option>
                     <option value="series" ${rascunho.tipo === 'series' ? 'selected' : ''}>Série</option>
+                    <option value="show" ${rascunho.tipo === 'show' ? 'selected' : ''}>Show</option>
+                    <option value="palestra" ${rascunho.tipo === 'palestra' ? 'selected' : ''}>Palestra</option>
                 </select>
             </div>`
             : `
