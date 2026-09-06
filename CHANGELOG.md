@@ -8,6 +8,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Nova aba "Livros": registro de livros lidos/em leitura, com capa, autor,
+  editora, idioma e número de páginas, buscados via **Open Library API**
+  (gratuita, sem chave — diferente da OMDb usada em Filmes). Como a
+  leitura demora, cada registro tem data de início e data de fim
+  (fim em branco = ainda lendo). Mesma avaliação pessoal de Filmes
+  (estrelas + opinião); registro manual sempre disponível como
+  alternativa à busca (issue #14).
 - Filmes: registro de séries passa a ser **por episódio** (temporada,
   número do episódio e título do episódio opcional); tanto filmes quanto
   séries ganharam o campo "Onde assistiu" (TV aberta, Cinema ou Streaming

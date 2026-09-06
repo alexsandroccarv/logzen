@@ -92,6 +92,9 @@
                 <button id="tab-filmes-btn" aria-controls="tab-filmes" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="filmes">
                     <i aria-hidden="true" class="fa-solid fa-film mr-1"></i> Filmes
                 </button>
+                <button id="tab-livros-btn" aria-controls="tab-livros" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="livros">
+                    <i aria-hidden="true" class="fa-solid fa-book mr-1"></i> Livros
+                </button>
             </div>
         </nav>
     </header>
@@ -131,6 +134,17 @@
                     configure sua chave gratuita em Configurações → Filmes.
                 </p>
                 <div id="filmesRoot" class="space-y-4"></div>
+            </div>
+        </div>
+        <div id="tab-livros" class="tab-panel" role="tabpanel" aria-labelledby="tab-livros-btn" tabindex="0" hidden>
+            <div class="max-w-2xl mx-auto space-y-4">
+                <h2 class="text-lg font-bold">Livros</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    Registre os livros que está lendo ou já leu, com suas estrelas e
+                    opinião. A busca de capa, autor, editora e páginas usa a Open
+                    Library API — gratuita, sem precisar de chave.
+                </p>
+                <div id="livrosRoot" class="space-y-4"></div>
             </div>
         </div>
         <div id="tab-config" class="tab-panel" role="tabpanel" aria-labelledby="headerConfigBtn" tabindex="0" hidden>
@@ -257,5 +271,6 @@
     <script src="js/logzen-data.js"></script>
     <script src="js/logzen-app.js"></script>
     <script src="js/logzen-filmes.js"></script>
+    <script src="js/logzen-livros.js"></script>
 </body>
 </html>
