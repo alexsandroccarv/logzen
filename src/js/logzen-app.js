@@ -612,17 +612,61 @@
                     <i aria-hidden="true" class="fa-solid fa-grip-vertical"></i>
                 </button>
                 <i aria-hidden="true" class="fa-solid ${cat.icone} text-brand-600 dark:text-accent-400"></i>
-                ${escapeHtml(cat.nome)}
+                <span class="flex-1 min-w-0 truncate">${escapeHtml(cat.nome)}</span>
+                ${cat.custom ? `<button type="button" data-action="delete-categoria" aria-label="Excluir categoria ${escapeHtml(cat.nome)}"
+                    class="w-8 h-8 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                    <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
+                </button>` : ''}
             </div>
             <div class="px-4 divide-y divide-gray-100 dark:divide-gray-700" data-cat-items-list>${itensHtml}</div>
             ${renderFormularioNovoItem(cat)}
         </div>`;
     }
 
+    // Adicionar categoria (issue #10): ativa uma sugerida ou cria uma
+    // totalmente personalizada. Fica vazia (sem itens) até o usuário
+    // adicionar algo a ela, igual às 5 categorias originais.
+    function renderFormularioNovaCategoria() {
+        const sugeridas = window.LogZenCatalog.getCategoriasSugeridasDisponiveis();
+        const opcoesSugeridas = sugeridas.map((c) => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+        return `
+        <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4">
+            <button type="button" data-action="toggle-add-categoria-form" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
+                <i aria-hidden="true" class="fa-solid fa-plus"></i> Adicionar categoria
+            </button>
+            <form data-add-categoria-form hidden class="space-y-2 pt-3">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Categoria</label>
+                    <select data-field="sugerida" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        ${opcoesSugeridas}
+                        <option value="__custom__">Outra (personalizada)…</option>
+                    </select>
+                </div>
+                <div data-field-group="nome-custom" hidden>
+                    <label class="block text-xs font-medium mb-1">Nome da categoria</label>
+                    <input type="text" data-field="nome" maxlength="40" placeholder="ex.: Jardinagem"
+                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Adicionar</button>
+                    <button type="button" data-action="cancel-add-categoria-form" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+                </div>
+            </form>
+        </div>`;
+    }
+
+    // Mostra o campo de nome só quando "Outra (personalizada)" é escolhida.
+    function syncFormularioCategoria(form) {
+        const grupo = form.querySelector('[data-field-group="nome-custom"]');
+        if (grupo) grupo.hidden = form.querySelector('[data-field="sugerida"]').value !== '__custom__';
+    }
+
     function renderItensConfig() {
         if (!itensConfigRootEl) return;
         const categorias = window.LogZenCatalog.getCategorias();
-        itensConfigRootEl.innerHTML = categorias.map((cat) => renderCategoriaConfig(cat)).join('');
+        itensConfigRootEl.innerHTML =
+            categorias.map((cat) => renderCategoriaConfig(cat)).join('') +
+            renderFormularioNovaCategoria();
     }
 
     function wireItensConfig(root) {
@@ -671,10 +715,39 @@
                 sincronizarHoje();
                 return;
             }
+
+            const toggleAddCatBtn = e.target.closest('[data-action="toggle-add-categoria-form"]');
+            if (toggleAddCatBtn) {
+                const form = toggleAddCatBtn.nextElementSibling;
+                form.hidden = !form.hidden;
+                if (!form.hidden) syncFormularioCategoria(form);
+                return;
+            }
+
+            const cancelAddCatBtn = e.target.closest('[data-action="cancel-add-categoria-form"]');
+            if (cancelAddCatBtn) {
+                const form = cancelAddCatBtn.closest('form[data-add-categoria-form]');
+                form.reset();
+                syncFormularioCategoria(form);
+                form.hidden = true;
+                return;
+            }
+
+            const deleteCatBtn = e.target.closest('[data-action="delete-categoria"]');
+            if (deleteCatBtn) {
+                const catBlock = deleteCatBtn.closest('[data-cat-block]');
+                const nome = catBlock.querySelector('span.flex-1').textContent;
+                if (!window.confirm(`Excluir a categoria "${nome}"? Os itens e registros dela continuam guardados — ela só deixa de aparecer na tela.`)) return;
+                window.LogZenCatalog.removeCategoria(catBlock.dataset.cat);
+                renderItensConfig();
+                sincronizarHoje();
+                return;
+            }
         });
 
         root.addEventListener('change', (e) => {
             if (e.target.matches('[data-field="tipo"]')) syncFieldGroups(e.target.closest('form[data-add-item-form]'));
+            if (e.target.matches('[data-field="sugerida"]')) syncFormularioCategoria(e.target.closest('form[data-add-categoria-form]'));
         });
 
         root.addEventListener('submit', (e) => {
@@ -719,6 +792,22 @@
                     }
                 }
                 window.LogZenCatalog.updateItem(editForm.dataset.cat, editForm.dataset.item, dados);
+                renderItensConfig();
+                sincronizarHoje();
+                return;
+            }
+
+            const catForm = e.target.closest('form[data-add-categoria-form]');
+            if (catForm) {
+                e.preventDefault();
+                const sugerida = catForm.querySelector('[data-field="sugerida"]').value;
+                if (sugerida === '__custom__') {
+                    const nome = catForm.querySelector('[data-field="nome"]').value.trim();
+                    if (!nome) return;
+                    window.LogZenCatalog.addCategoria({ nome });
+                } else {
+                    window.LogZenCatalog.addCategoria({ id: sugerida });
+                }
                 renderItensConfig();
                 sincronizarHoje();
             }

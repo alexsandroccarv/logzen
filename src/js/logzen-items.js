@@ -61,3 +61,21 @@ window.LOGZEN_CATEGORIES = [
         ],
     },
 ];
+
+/* ==========================================================================
+   Categorias sugeridas (issue #10) — não ativas por padrão. O usuário
+   ativa uma (ou cria uma totalmente personalizada) em Configurações →
+   "Adicionar categoria"; a partir daí funciona igual às de cima (itens,
+   arrastar para reordenar, etc.).
+   ========================================================================== */
+window.LOGZEN_CATEGORIAS_SUGERIDAS = [
+    { id: 'esporte', nome: 'Esporte', icone: 'fa-futbol', descricao: 'Prática esportiva e atividade física.' },
+    { id: 'cultura', nome: 'Cultura', icone: 'fa-masks-theater', descricao: 'Livros, cinema, teatro, museus.' },
+    { id: 'farmacia', nome: 'Farmácia / Medicamentos', icone: 'fa-pills', descricao: 'Remédios e cuidados de saúde.' },
+    { id: 'vida_social', nome: 'Vida social', icone: 'fa-people-group', descricao: 'Encontros, amigos, família.' },
+    { id: 'estudos', nome: 'Estudos', icone: 'fa-book', descricao: 'Cursos, leitura técnica, aprendizado.' },
+    { id: 'alimentacao', nome: 'Alimentação', icone: 'fa-utensils', descricao: 'Refeições e hábitos alimentares.' },
+    { id: 'financas', nome: 'Finanças', icone: 'fa-sack-dollar', descricao: 'Gastos, economia, investimentos.' },
+    { id: 'trabalho', nome: 'Trabalho', icone: 'fa-briefcase', descricao: 'Produtividade e rotina profissional.' },
+    { id: 'sono', nome: 'Sono', icone: 'fa-bed', descricao: 'Qualidade e horário de sono.' },
+];

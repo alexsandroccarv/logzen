@@ -1,10 +1,12 @@
 /* ==========================================================================
-   LogZen — Catálogo em tempo de execução: itens padrão (logzen-items.js)
-   mesclados com itens customizados pelo usuário (issue #2), guardados
-   localmente. Desde a issue #8, TODO item é editável/excluível — inclusive
-   os do catálogo de fábrica: editar grava um "patch" (nome/unidade/opções)
-   por cima do original, e excluir apenas marca o id como escondido. O
-   arquivo logzen-items.js nunca é modificado; o `id` de um item nunca
+   LogZen — Catálogo em tempo de execução: categorias e itens padrão
+   (logzen-items.js) mesclados com categorias/itens customizados pelo
+   usuário, guardados localmente. Desde a issue #8, TODO item é
+   editável/excluível — inclusive os do catálogo de fábrica: editar grava
+   um "patch" (nome/unidade/opções) por cima do original, e excluir apenas
+   marca o id como escondido. Categorias novas (issue #10) — sugeridas ou
+   personalizadas — funcionam do mesmo jeito que as 5 originais. O arquivo
+   logzen-items.js nunca é modificado; o `id` de um item/categoria nunca
    muda, então o histórico salvo por data continua válido mesmo depois de
    editado ou "excluído".
    ========================================================================== */
@@ -13,7 +15,68 @@ window.LogZenCatalog = (function () {
     const ORDEM_KEY = 'logzen:ordem:v1';
     const OVERRIDES_KEY = 'logzen:item-overrides:v1';
     const HIDDEN_KEY = 'logzen:item-hidden:v1';
+    const CATEGORIAS_KEY = 'logzen:custom-categorias:v1';
     const DIACRITICOS = /[̀-ͯ]/g;
+
+    function readCategoriasCustom() {
+        try {
+            const raw = localStorage.getItem(CATEGORIAS_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function writeCategoriasCustom(lista) {
+        try { localStorage.setItem(CATEGORIAS_KEY, JSON.stringify(lista)); }
+        catch (e) { /* storage indisponível — segue sem persistir */ }
+    }
+
+    // Categorias sugeridas (issue #10) que ainda não foram ativadas.
+    function getCategoriasSugeridasDisponiveis() {
+        const ativas = new Set(readCategoriasCustom().map((c) => c.id));
+        return (window.LOGZEN_CATEGORIAS_SUGERIDAS || []).filter((c) => !ativas.has(c.id));
+    }
+
+    function idUnicoCategoria(nome) {
+        const base = slug(nome);
+        const existentes = new Set([
+            ...window.LOGZEN_CATEGORIES.map((c) => c.id),
+            ...readCategoriasCustom().map((c) => c.id),
+        ]);
+        if (!existentes.has(base)) return base;
+        let n = 2;
+        while (existentes.has(`${base}-${n}`)) n += 1;
+        return `${base}-${n}`;
+    }
+
+    // Ativa uma categoria sugerida (por id) ou cria uma personalizada
+    // (dados = {nome, icone?, descricao?}) — issue #10. Fica vazia até o
+    // usuário adicionar itens a ela, igual às 5 categorias originais.
+    function addCategoria(dados) {
+        const sugerida = (window.LOGZEN_CATEGORIAS_SUGERIDAS || []).find((c) => c.id === dados.id);
+        const categorias = readCategoriasCustom();
+        const nova = sugerida
+            ? { ...sugerida, custom: true }
+            : {
+                id: idUnicoCategoria(dados.nome),
+                nome: dados.nome,
+                icone: dados.icone || 'fa-star',
+                descricao: dados.descricao || '',
+                custom: true,
+            };
+        categorias.push(nova);
+        writeCategoriasCustom(categorias);
+        return nova;
+    }
+
+    // Remove uma categoria adicionada pelo usuário (as 5 originais não
+    // podem ser removidas por aqui). Os itens/registros dela continuam no
+    // armazenamento local — só a categoria deixa de aparecer.
+    function removeCategoria(categoriaId) {
+        const categorias = readCategoriasCustom().filter((c) => c.id !== categoriaId);
+        writeCategoriasCustom(categorias);
+    }
 
     function readOverrides() {
         try {
@@ -198,14 +261,16 @@ window.LogZenCatalog = (function () {
         const custom = readCustom();
         const overrides = readOverrides();
         const hidden = readHidden();
-        const base = window.LOGZEN_CATEGORIES.map((cat) => {
+        const padrao = window.LOGZEN_CATEGORIES.map((cat) => {
             const escondidos = new Set(hidden[cat.id] || []);
             const patches = overrides[cat.id] || {};
-            const padrao = cat.itens
+            const itensPadrao = cat.itens
                 .filter((item) => !escondidos.has(item.id))
                 .map((item) => (patches[item.id] ? { ...item, ...patches[item.id] } : item));
-            return { ...cat, itens: [...padrao, ...(custom[cat.id] || [])] };
+            return { ...cat, itens: [...itensPadrao, ...(custom[cat.id] || [])] };
         });
+        const extras = readCategoriasCustom().map((cat) => ({ ...cat, itens: [...(custom[cat.id] || [])] }));
+        const base = [...padrao, ...extras];
         const categorias = window.LogZenReorder.aplicarOrdem(base, (c) => c.id, getOrdemCategorias());
         return categorias.map((cat) => ({
             ...cat,
@@ -216,5 +281,6 @@ window.LogZenCatalog = (function () {
     return {
         getCategorias, addCustomItem, updateItem, removeItem,
         getOrdemCategorias, setOrdemCategorias, getOrdemItens, setOrdemItens,
+        getCategoriasSugeridasDisponiveis, addCategoria, removeCategoria,
     };
 })();

@@ -42,6 +42,18 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   (aberto por padrão) — adicionar (texto livre), marcar concluído
   (risca o texto) e remover. Guardado por data, junto com o resto do
   registro do dia (issue #9).
+- Categorias sugeridas (Esporte, Cultura, Farmácia/Medicamentos, Vida
+  social, Estudos, Alimentação, Finanças, Trabalho, Sono) e seção
+  "Adicionar categoria" em Configurações — ativa uma sugerida ou cria
+  uma totalmente personalizada; funciona igual às 5 originais (itens,
+  arrastar para reordenar) e pode ser removida sem apagar o histórico
+  já salvo (issue #10).
+- Nova aba "Filmes": registro de filmes/séries assistidos, com busca
+  de pôster/duração/prêmios via OMDb API (chave própria do usuário,
+  colada em Configurações → Filmes — nunca embutida no código, já que
+  o site é estático) e avaliação pessoal (estrelas + opinião). Sem
+  chave configurada, o registro manual continua funcionando (issue
+  #11).
 
 ### Changed
 - "Nota do dia" virou **"Como foi meu dia"** e saiu do início da tela
