@@ -8,6 +8,28 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Filmes: colar um link do YouTube no campo de busca e clicar em
+  "Buscar" traz os dados do vídeo (título, miniatura, canal) via
+  oEmbed do YouTube — público, sem precisar de chave. O campo de busca
+  agora aparece mesmo sem a chave da OMDb configurada (só a busca por
+  título continua exigindo a chave); "Onde assistiu" já vem
+  pré-selecionado como YouTube (issue #21).
+- Nova aba "Backlog", ao lado de "Hoje": lista de coisas para fazer, com
+  projeto (opcional), ação, prazo início/fim (opcionais) e descrição.
+  Cada tarefa ganha um botão "Enviar para hoje" que cria o objetivo do
+  dia a partir dela (some da lista ativa e vai para "Enviadas", com
+  opção de desfazer). "Objetivos do dia" passa a ter um limite rígido
+  de 10 itens (regra 1-3-5) — tanto ao adicionar manualmente quanto ao
+  enviar do Backlog; a migração automática de pendências (issue #12)
+  respeita o mesmo limite, sem nunca perder um item pendente (issue #20).
+- Entregas: checkbox "Não entregue" ao lado de "Entregue" — os dois
+  funcionam como um par (marcar um desmarca o outro); marcar "Não
+  entregue" cancela uma confirmação de entrega em andamento (issue #19).
+
+### Fixed
+- Entregas: uma data de previsão/compra/entrega inválida ou corrompida
+  não aparece mais como "Invalid Date" no card — é tratada como ausente
+  (issue #19).
 - Filmes: dois novos tipos no cadastro manual, **Show** e **Palestra**
   (além de Filme e Série), e **YouTube** como opção em "Onde assistiu"
   (junto de TV aberta, Cinema e Streaming) (issue #18).

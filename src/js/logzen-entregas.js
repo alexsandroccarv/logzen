@@ -157,6 +157,13 @@ window.LogZenEntregas = (function () {
         </div>`;
     }
 
+    // Só aceita "YYYY-MM-DD" válido — protege contra datas vazias/corrompidas
+    // (ex.: um valor parcial que escapou do <input type="date">) virarem
+    // "Invalid Date" na tela.
+    function dataValida(d) {
+        return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(new Date(d + 'T00:00:00').getTime());
+    }
+
     function fmtData(d) {
         return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
     }
@@ -164,7 +171,7 @@ window.LogZenEntregas = (function () {
     function renderEntrada(e) {
         const hoje = window.LogZenData.todayKey();
         let previsaoHtml = '';
-        if (e.dataPrevisao) {
+        if (dataValida(e.dataPrevisao)) {
             const atrasada = e.dataPrevisao < hoje;
             previsaoHtml = `<p class="text-xs font-medium ${atrasada ? 'text-red-600 dark:text-red-400' : 'text-brand-700 dark:text-accent-400'} truncate">
                 ${atrasada ? 'Atrasada — previsão era' : 'Previsão de entrega:'} ${escapeHtml(fmtData(e.dataPrevisao))}</p>`;
@@ -176,7 +183,7 @@ window.LogZenEntregas = (function () {
                 <div class="min-w-0">
                     <p class="font-semibold truncate">${escapeHtml(e.nome)}</p>
                     ${detalhes ? `<p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)}</p>` : ''}
-                    ${e.dataCompra ? `<p class="text-xs text-gray-500 dark:text-gray-400">Comprado em ${escapeHtml(fmtData(e.dataCompra))}</p>` : ''}
+                    ${dataValida(e.dataCompra) ? `<p class="text-xs text-gray-500 dark:text-gray-400">Comprado em ${escapeHtml(fmtData(e.dataCompra))}</p>` : ''}
                     ${previsaoHtml}
                     ${e.observacoes ? `<p class="text-sm mt-1">${escapeHtml(e.observacoes)}</p>` : ''}
                 </div>
@@ -192,10 +199,16 @@ window.LogZenEntregas = (function () {
                 </div>
             </div>
             <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                    <input type="checkbox" data-action="marcar-entregue" class="rounded border-gray-300 dark:border-gray-600">
-                    Entregue
-                </label>
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="checkbox" data-action="marcar-entregue" class="rounded border-gray-300 dark:border-gray-600">
+                        Entregue
+                    </label>
+                    <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="checkbox" data-action="marcar-nao-entregue" checked class="rounded border-gray-300 dark:border-gray-600">
+                        Não entregue
+                    </label>
+                </div>
                 <div data-confirmar-entrega hidden class="flex items-center gap-2 mt-2">
                     <input type="date" data-field="dataEntrega" value="${hoje}" max="${hoje}"
                         class="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs focus:outline-none focus:ring-2 focus:ring-brand-400">
@@ -214,7 +227,7 @@ window.LogZenEntregas = (function () {
                 <div class="min-w-0">
                     <p class="font-semibold truncate">${escapeHtml(e.nome)}</p>
                     ${detalhes ? `<p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)}</p>` : ''}
-                    ${e.dataEntrega ? `<p class="text-xs font-medium text-green-700 dark:text-green-400">Entregue em ${escapeHtml(fmtData(e.dataEntrega))}</p>` : ''}
+                    ${dataValida(e.dataEntrega) ? `<p class="text-xs font-medium text-green-700 dark:text-green-400">Entregue em ${escapeHtml(fmtData(e.dataEntrega))}</p>` : ''}
                     ${e.observacoes ? `<p class="text-sm mt-1">${escapeHtml(e.observacoes)}</p>` : ''}
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
@@ -310,6 +323,7 @@ window.LogZenEntregas = (function () {
             if (cancelarEntregueBtn) {
                 const card = cancelarEntregueBtn.closest('[data-entrega-entrada]');
                 card.querySelector('[data-action="marcar-entregue"]').checked = false;
+                card.querySelector('[data-action="marcar-nao-entregue"]').checked = true;
                 card.querySelector('[data-confirmar-entrega]').hidden = true;
                 return;
             }
@@ -324,10 +338,27 @@ window.LogZenEntregas = (function () {
         });
 
         rootEl.addEventListener('change', (e) => {
-            const checkbox = e.target.closest('[data-action="marcar-entregue"]');
-            if (checkbox) {
-                const card = checkbox.closest('[data-entrega-entrada]');
-                card.querySelector('[data-confirmar-entrega]').hidden = !checkbox.checked;
+            const entregueBox = e.target.closest('[data-action="marcar-entregue"]');
+            if (entregueBox) {
+                const card = entregueBox.closest('[data-entrega-entrada]');
+                const naoBox = card.querySelector('[data-action="marcar-nao-entregue"]');
+                if (naoBox) naoBox.checked = !entregueBox.checked;
+                card.querySelector('[data-confirmar-entrega]').hidden = !entregueBox.checked;
+                return;
+            }
+
+            const naoBox = e.target.closest('[data-action="marcar-nao-entregue"]');
+            if (naoBox) {
+                const card = naoBox.closest('[data-entrega-entrada]');
+                const entregueBox = card.querySelector('[data-action="marcar-entregue"]');
+                if (naoBox.checked) {
+                    if (entregueBox) entregueBox.checked = false;
+                    card.querySelector('[data-confirmar-entrega]').hidden = true;
+                } else {
+                    // Item pendente é sempre "não entregue" — não deixa
+                    // ficar sem nenhum dos dois marcado.
+                    naoBox.checked = true;
+                }
             }
         });
 
