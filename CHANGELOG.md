@@ -8,6 +8,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Entregas: checkbox "Não entregue" ao lado de "Entregue" — os dois
+  funcionam como um par (marcar um desmarca o outro); marcar "Não
+  entregue" cancela uma confirmação de entrega em andamento (issue #19).
+
+### Fixed
+- Entregas: uma data de previsão/compra/entrega inválida ou corrompida
+  não aparece mais como "Invalid Date" no card — é tratada como ausente
+  (issue #19).
 - Filmes: dois novos tipos no cadastro manual, **Show** e **Palestra**
   (além de Filme e Série), e **YouTube** como opção em "Onde assistiu"
   (junto de TV aberta, Cinema e Streaming) (issue #18).
