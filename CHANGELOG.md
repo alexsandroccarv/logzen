@@ -8,6 +8,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Nova aba "Entregas", entre "Hoje" e "Filmes": cadastro de compras
+  aguardando entrega (nome, data da compra, previsão de entrega,
+  loja/e-commerce, número de rastreio e observações). Cadastro 100%
+  manual (sem integração externa — cada transportadora tem seu próprio
+  rastreamento); a lista ordena pela previsão mais próxima primeiro e
+  destaca em vermelho as entregas com previsão vencida (issue #15).
+- Nova aba "Livros": registro de livros lidos/em leitura, com capa, autor,
+  editora, idioma e número de páginas, buscados via **Open Library API**
+  (gratuita, sem chave — diferente da OMDb usada em Filmes). Como a
+  leitura demora, cada registro tem data de início e data de fim
+  (fim em branco = ainda lendo). Mesma avaliação pessoal de Filmes
+  (estrelas + opinião); registro manual sempre disponível como
+  alternativa à busca (issue #14).
 - Filmes: registro de séries passa a ser **por episódio** (temporada,
   número do episódio e título do episódio opcional); tanto filmes quanto
   séries ganharam o campo "Onde assistiu" (TV aberta, Cinema ou Streaming
