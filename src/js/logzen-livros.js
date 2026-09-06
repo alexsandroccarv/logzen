@@ -1,13 +1,13 @@
 /* ==========================================================================
    LogZen — Livros (issue #14): registro de livros lidos, com busca de
-   metadados (capa, autor, editora, páginas) via Open Library API — gratuita
-   e sem chave (diferente da OMDb usada em Filmes), então a busca funciona
-   direto, sem nenhuma configuração. Se a Open Library não encontrar nada
-   (comum para livros indies/menos conhecidos), cai automaticamente para a
-   Google Books API (issue #24) — também gratuita/sem chave em volume baixo.
-   Os resultados das duas fontes são normalizados para o mesmo formato antes
-   de exibir. Fallback de registro manual sempre disponível. Leitura tem
-   início e fim (fim em branco = ainda lendo).
+   metadados (capa, autor, editora, páginas) via Google Books API — gratuita
+   e sem chave em volume baixo. Se ela não encontrar nada, cai automaticamente
+   para a Open Library API (issue #24) — segunda fonte, também sem chave.
+   A busca aceita título ou ISBN (10 ou 13 dígitos, com ou sem hífen) — o
+   código detecta automaticamente qual é o caso. Os resultados das duas
+   fontes são normalizados para o mesmo formato antes de exibir. Fallback de
+   registro manual sempre disponível. Leitura tem início e fim (fim em
+   branco = ainda lendo).
    ========================================================================== */
 window.LogZenLivros = (function () {
     const ENTRIES_KEY = 'logzen:livros:v1';
@@ -57,8 +57,19 @@ window.LogZenLivros = (function () {
         return IDIOMA_LABEL[codigo] || codigo;
     }
 
+    // Aceita ISBN-10 (9 dígitos + dígito verificador, que pode ser X) ou
+    // ISBN-13 (13 dígitos), com ou sem hífen/espaço.
+    function pareceIsbn(query) {
+        const limpo = query.replace(/[-\s]/g, '');
+        return /^(?:\d{9}[\dXx]|\d{13})$/.test(limpo);
+    }
+
     async function buscarOpenLibrary(query) {
-        const resp = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&fields=key,title,author_name,first_publish_year,cover_i,publisher,number_of_pages_median,language&limit=10`);
+        const isbn = pareceIsbn(query);
+        const url = isbn
+            ? `https://openlibrary.org/search.json?isbn=${encodeURIComponent(query.replace(/[-\s]/g, ''))}&fields=key,title,author_name,first_publish_year,cover_i,publisher,number_of_pages_median,language&limit=10`
+            : `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&fields=key,title,author_name,first_publish_year,cover_i,publisher,number_of_pages_median,language&limit=10`;
+        const resp = await fetch(url);
         if (!resp.ok) throw new Error('Falha ao conectar com a Open Library.');
         const dados = await resp.json();
         return (dados.docs || []).filter((d) => d.title).map((item) => ({
@@ -75,7 +86,8 @@ window.LogZenLivros = (function () {
     }
 
     async function buscarGoogleBooks(query) {
-        const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10`);
+        const termo = pareceIsbn(query) ? `isbn:${query.replace(/[-\s]/g, '')}` : query;
+        const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(termo)}&maxResults=10`);
         if (!resp.ok) throw new Error('Falha ao conectar com o Google Books.');
         const dados = await resp.json();
         return (dados.items || []).filter((it) => it.volumeInfo && it.volumeInfo.title).map((it) => {
@@ -95,13 +107,13 @@ window.LogZenLivros = (function () {
         });
     }
 
-    // Tenta a Open Library primeiro; se não achar nada (ou falhar), cai
-    // para a Google Books — segunda fonte, também sem exigir chave.
+    // Tenta a Google Books primeiro; se não achar nada (ou falhar), cai
+    // para a Open Library — segunda fonte, também sem exigir chave.
     async function buscarPorTitulo(query) {
         let resultados = [];
-        try { resultados = await buscarOpenLibrary(query); } catch (e) { resultados = []; }
+        try { resultados = await buscarGoogleBooks(query); } catch (e) { resultados = []; }
         if (resultados.length) return resultados;
-        return buscarGoogleBooks(query);
+        return buscarOpenLibrary(query);
     }
 
     return { listar, salvar, remover, labelIdioma, buscarPorTitulo };
@@ -227,7 +239,7 @@ window.LogZenLivros = (function () {
             </button>
             <div data-add-livro-body hidden class="space-y-3">
                 <form data-form-busca class="flex items-center gap-2">
-                    <input type="text" data-field="busca" placeholder="Título do livro…"
+                    <input type="text" data-field="busca" placeholder="Título do livro ou ISBN…"
                         class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                     <button type="submit" class="px-3 py-2 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700 shrink-0">Buscar</button>
                 </form>
@@ -377,8 +389,8 @@ window.LogZenLivros = (function () {
                     }
                     if (status) {
                         if (!resultados.length) { status.textContent = 'Nada encontrado.'; status.classList.remove('hidden'); }
-                        else if (resultados[0].fonte === 'Google Books') {
-                            status.textContent = 'A Open Library não encontrou nada — resultados via Google Books.';
+                        else if (resultados[0].fonte === 'Open Library') {
+                            status.textContent = 'O Google Books não encontrou nada — resultados via Open Library.';
                             status.classList.remove('hidden');
                         } else {
                             status.classList.add('hidden');
