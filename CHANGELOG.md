@@ -7,6 +7,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Changed
+- Versão inicial do app começa sem nenhuma categoria/item ativado na
+  tela "Hoje": as 5 categorias que antes vinham sempre ativas
+  (Exercícios, Vícios, Hábitos, Ânimo/Saúde mental, Atividade sexual)
+  viraram sugestões como as demais — mesmo id/nome/ícone, mas sem itens
+  pré-cadastrados, ativadas só quando o usuário escolhe em
+  Configurações → "Adicionar categoria" (issue #26).
+
 ### Added
 - Livros: busca passa a tentar a **Google Books** primeiro (com a Open
   Library como segunda fonte, quando a primeira não encontra) e aceita
