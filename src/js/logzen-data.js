@@ -85,6 +85,19 @@ window.LogZenData = (function () {
         writeAll(all);
     }
 
+    // Objetivos do dia (issue #9): lista de tarefas ad-hoc, digitadas na
+    // hora — não fazem parte do catálogo de hábitos (logzen-catalog.js).
+    function getObjetivos(dateKey) {
+        return getEntry(dateKey).objetivos || [];
+    }
+
+    function setObjetivos(dateKey, lista) {
+        const all = readAll();
+        if (!all[dateKey]) all[dateKey] = {};
+        all[dateKey].objetivos = lista;
+        writeAll(all);
+    }
+
     function getNota(dateKey) {
         return getEntry(dateKey).nota || '';
     }
@@ -107,6 +120,7 @@ window.LogZenData = (function () {
 
     return {
         todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado,
-        getItemNota, setItemNota, getNota, setNota, exportJSON, importJSON,
+        getItemNota, setItemNota, getObjetivos, setObjetivos, getNota, setNota,
+        exportJSON, importJSON,
     };
 })();

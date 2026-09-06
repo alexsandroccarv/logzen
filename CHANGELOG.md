@@ -38,7 +38,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   reordenam dentro da própria categoria. A ordem escolhida é salva
   localmente e aplicada também na tela "Hoje" (issue #7).
 
+- Objetivos do dia: bloco de tarefas ad-hoc no início da tela "Hoje"
+  (aberto por padrão) — adicionar (texto livre), marcar concluído
+  (risca o texto) e remover. Guardado por data, junto com o resto do
+  registro do dia (issue #9).
+
 ### Changed
+- "Nota do dia" virou **"Como foi meu dia"** e saiu do início da tela
+  "Hoje" para o final, depois de todas as categorias (issue #9).
 - Exportar/importar dados (JSON) saiu do cabeçalho da tela "Hoje" e virou
   uma seção "Salvar/backup" em Configurações, com rótulos completos
   (issue #4).

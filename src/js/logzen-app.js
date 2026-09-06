@@ -221,7 +221,7 @@
         <details data-cat="__nota__" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" ${valor ? 'open' : ''}>
             <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
                 <i aria-hidden="true" class="fa-solid fa-note-sticky text-brand-600 dark:text-accent-400"></i>
-                Nota do dia
+                Como foi meu dia
                 <span class="text-xs font-normal text-gray-500 dark:text-gray-400">Observação livre, opcional.</span>
             </summary>
             <div class="p-4">
@@ -231,9 +231,54 @@
         </details>`;
     }
 
+    // Objetivos do dia (issue #9): tarefas ad-hoc, digitadas na hora — não
+    // fazem parte do catálogo de hábitos, ficam só neste bloco no início.
+    function renderObjetivoItem(o) {
+        return `
+        <li data-objetivo-item data-id="${o.id}" class="flex items-center gap-2 py-1.5">
+            <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                <input type="checkbox" data-action="toggle-objetivo" class="w-5 h-5 accent-brand-600 dark:accent-accent-500 shrink-0" ${o.feito ? 'checked' : ''} aria-label="Concluído">
+                <span class="truncate ${o.feito ? 'line-through text-gray-400 dark:text-gray-500' : ''}">${escapeHtml(o.texto)}</span>
+            </label>
+            <button type="button" data-action="remove-objetivo" aria-label="Remover objetivo" class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                <i aria-hidden="true" class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </li>`;
+    }
+
+    function renderObjetivos(dateKey) {
+        const lista = window.LogZenData.getObjetivos(dateKey);
+        return `
+        <details data-cat="__objetivos__" open class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
+                <i aria-hidden="true" class="fa-solid fa-bullseye text-brand-600 dark:text-accent-400"></i>
+                Objetivos do dia
+                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">O que você quer conseguir hoje.</span>
+            </summary>
+            <div class="p-4 space-y-2">
+                <ul data-objetivos-lista class="space-y-1">${lista.map(renderObjetivoItem).join('')}</ul>
+                <p data-objetivos-vazio class="text-xs text-gray-500 dark:text-gray-400 ${lista.length ? 'hidden' : ''}">Nenhum objetivo ainda — adicione um abaixo.</p>
+                <form data-add-objetivo-form class="flex items-center gap-2 pt-1">
+                    <input type="text" data-field="texto" placeholder="Adicionar objetivo…" maxlength="140"
+                        class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    <button type="submit" aria-label="Adicionar objetivo" class="w-9 h-9 shrink-0 rounded bg-brand-600 dark:bg-accent-600 text-white flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-solid fa-plus"></i>
+                    </button>
+                </form>
+            </div>
+        </details>`;
+    }
+
+    function gerarIdObjetivo() {
+        return `o${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    }
+
     function render(root, dateKey) {
         const categorias = window.LogZenCatalog.getCategorias();
-        root.innerHTML = renderNota(dateKey) + categorias.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('');
+        root.innerHTML =
+            renderObjetivos(dateKey) +
+            categorias.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('') +
+            renderNota(dateKey);
     }
 
     // Roda `renderFn` recriando o HTML de `root` mas preservando quais
@@ -332,6 +377,20 @@
                 return;
             }
 
+            const removeObjetivoBtn = e.target.closest('[data-action="remove-objetivo"]');
+            if (removeObjetivoBtn) {
+                const li = removeObjetivoBtn.closest('[data-objetivo-item]');
+                const lista = window.LogZenData.getObjetivos(dataAtual).filter((o) => o.id !== li.dataset.id);
+                window.LogZenData.setObjetivos(dataAtual, lista);
+                const ul = li.parentElement;
+                li.remove();
+                if (lista.length === 0) {
+                    const vazio = ul.parentElement.querySelector('[data-objetivos-vazio]');
+                    if (vazio) vazio.classList.remove('hidden');
+                }
+                return;
+            }
+
             const row = e.target.closest('[data-row]');
             if (!row) return;
             const { cat, item, tipo } = row.dataset;
@@ -385,6 +444,21 @@
         });
 
         root.addEventListener('change', (e) => {
+            const objetivoItem = e.target.closest('[data-objetivo-item]');
+            if (objetivoItem && e.target.dataset.action === 'toggle-objetivo') {
+                const lista = window.LogZenData.getObjetivos(dataAtual);
+                const o = lista.find((x) => x.id === objetivoItem.dataset.id);
+                if (o) {
+                    o.feito = e.target.checked;
+                    window.LogZenData.setObjetivos(dataAtual, lista);
+                }
+                const span = objetivoItem.querySelector('span');
+                span.classList.toggle('line-through', e.target.checked);
+                span.classList.toggle('text-gray-400', e.target.checked);
+                span.classList.toggle('dark:text-gray-500', e.target.checked);
+                return;
+            }
+
             const row = e.target.closest('[data-row][data-tipo="checkbox"]');
             if (row && e.target.dataset.action === 'checkbox') {
                 window.LogZenData.setItemValue(dataAtual, row.dataset.cat, row.dataset.item, e.target.checked);
@@ -401,6 +475,25 @@
                 if (!row) return;
                 salvarNotaItemDebounced(e.target, dataAtual, row.dataset.cat, row.dataset.item);
             }
+        });
+
+        root.addEventListener('submit', (e) => {
+            const form = e.target.closest('form[data-add-objetivo-form]');
+            if (!form) return;
+            e.preventDefault();
+            const input = form.querySelector('[data-field="texto"]');
+            const texto = input.value.trim();
+            if (!texto) return;
+            const novo = { id: gerarIdObjetivo(), texto, feito: false };
+            const lista = window.LogZenData.getObjetivos(dataAtual);
+            lista.push(novo);
+            window.LogZenData.setObjetivos(dataAtual, lista);
+            const container = form.parentElement;
+            container.querySelector('[data-objetivos-lista]').insertAdjacentHTML('beforeend', renderObjetivoItem(novo));
+            const vazio = container.querySelector('[data-objetivos-vazio]');
+            if (vazio) vazio.classList.add('hidden');
+            input.value = '';
+            input.focus();
         });
     }
 
