@@ -20,6 +20,7 @@
     // renderização/eventos por data.
     let dataAtual = window.LogZenData.todayKey();
     let rootEl = null;
+    let itensConfigRootEl = null;
 
     function escapeHtml(s) {
         return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -28,16 +29,6 @@
     function debounce(fn, wait) {
         let t;
         return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
-    }
-
-    // Botão de remover (só para itens customizados — issue #2). Os itens do
-    // catálogo padrão (logzen-items.js) não podem ser removidos por aqui.
-    function trashBtn(item) {
-        if (!item.custom) return '';
-        return `<button type="button" data-action="remove-item" aria-label="Remover ${escapeHtml(item.nome)}"
-            class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
-            <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
-        </button>`;
     }
 
     // Nota curta por item, fechada por padrão — issue #3. O ícone de lápis
@@ -71,7 +62,6 @@
                     ${item.passoRapido ? `<button type="button" data-action="quick" data-amount="${item.passoRapido}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+${item.passoRapido}</button>` : ''}
                     ${item.passoLitro ? `<button type="button" data-action="quick" data-amount="${item.passoLitro}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+1L</button>` : ''}
                     ${notaBtn(item, temNota)}
-                    ${trashBtn(item)}
                 </div>
             </div>
             ${notaBox(cat, item, dateKey)}
@@ -91,7 +81,6 @@
                     <span data-value class="w-10 text-center font-mono text-lg tabular-nums">${valor}</span>
                     <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-current/40 hover:bg-black/5 dark:hover:bg-white/10 font-bold">+</button>
                     ${notaBtn(item, temNota)}
-                    ${trashBtn(item)}
                 </div>
             </div>
             <p data-streak class="text-xs mt-2 flex items-center gap-1"><i aria-hidden="true" class="fa-solid fa-fire"></i> ${streak} dia(s) sem "${escapeHtml(item.nome)}"</p>
@@ -111,7 +100,6 @@
                 </label>
                 <div class="flex items-center gap-2 shrink-0">
                     ${notaBtn(item, temNota)}
-                    ${trashBtn(item)}
                 </div>
             </div>
             ${notaBox(cat, item, dateKey)}
@@ -132,7 +120,6 @@
                 <p class="font-medium m-0">${escapeHtml(item.nome)}</p>
                 <div class="flex items-center gap-2 shrink-0">
                     ${notaBtn(item, temNota)}
-                    ${trashBtn(item)}
                 </div>
             </div>
             <div class="flex gap-1" role="radiogroup" aria-label="${escapeHtml(item.nome)}">${estrelas}</div>
@@ -154,7 +141,6 @@
                 <p class="font-medium m-0">${escapeHtml(item.nome)}</p>
                 <div class="flex items-center gap-2 shrink-0">
                     ${notaBtn(item, temNota)}
-                    ${trashBtn(item)}
                 </div>
             </div>
             <div class="flex flex-wrap gap-2">${pills}</div>
@@ -226,7 +212,6 @@
                 <span class="text-xs font-normal text-gray-500 dark:text-gray-400">${escapeHtml(cat.descricao)}</span>
             </summary>
             <div class="px-4 divide-y divide-gray-100 dark:divide-gray-700">${itensHtml}</div>
-            ${renderFormularioNovoItem(cat)}
         </details>`;
     }
 
@@ -251,14 +236,23 @@
         root.innerHTML = renderNota(dateKey) + categorias.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('');
     }
 
-    // Recria o HTML (após adicionar/remover item) preservando quais blocos
-    // (nota + categorias, sempre nesta ordem) estavam abertos/fechados.
-    function reRenderPreservingState(root) {
+    // Roda `renderFn` recriando o HTML de `root` mas preservando quais
+    // blocos de nível superior (<details>) estavam abertos/fechados — usado
+    // para atualizar a tela "Hoje" depois que a lista de itens muda em
+    // Configurações (issue #6), sem perder o que o usuário tinha aberto.
+    function reRenderComEstado(root, renderFn) {
         const abertos = Array.from(root.querySelectorAll(':scope > details')).map((d) => d.open);
-        render(root, dataAtual);
+        renderFn();
         Array.from(root.querySelectorAll(':scope > details')).forEach((d, i) => {
             if (abertos[i] !== undefined) d.open = abertos[i];
         });
+    }
+
+    // Atualiza a tela "Hoje" (se já estiver montada) para refletir mudanças
+    // no catálogo de itens feitas em Configurações.
+    function sincronizarHoje() {
+        if (!rootEl) return;
+        reRenderComEstado(rootEl, () => render(rootEl, dataAtual));
     }
 
     function formatarDataExtenso(dateKey) {
@@ -324,26 +318,6 @@
 
     function wire(root) {
         root.addEventListener('click', (e) => {
-            const toggleBtn = e.target.closest('[data-action="toggle-add-form"]');
-            if (toggleBtn) {
-                const form = toggleBtn.nextElementSibling;
-                form.hidden = !form.hidden;
-                if (!form.hidden) {
-                    syncFieldGroups(form);
-                    form.querySelector('[data-field="nome"]').focus();
-                }
-                return;
-            }
-
-            const cancelBtn = e.target.closest('[data-action="cancel-add-form"]');
-            if (cancelBtn) {
-                const form = cancelBtn.closest('form[data-add-item-form]');
-                form.reset();
-                syncFieldGroups(form);
-                form.hidden = true;
-                return;
-            }
-
             const notaToggle = e.target.closest('[data-action="toggle-nota"]');
             if (notaToggle) {
                 const row = notaToggle.closest('[data-row]');
@@ -351,17 +325,6 @@
                 wrap.hidden = !wrap.hidden;
                 notaToggle.setAttribute('aria-expanded', String(!wrap.hidden));
                 if (!wrap.hidden) wrap.querySelector('textarea').focus();
-                return;
-            }
-
-            const removeBtn = e.target.closest('[data-action="remove-item"]');
-            if (removeBtn) {
-                const row = removeBtn.closest('[data-row]');
-                if (!row) return;
-                const nome = row.dataset.nome || '';
-                if (!window.confirm(`Remover "${nome}"? Os registros já salvos para este item continuam guardados, só ele deixa de aparecer na tela.`)) return;
-                window.LogZenCatalog.removeCustomItem(row.dataset.cat, row.dataset.item);
-                reRenderPreservingState(root);
                 return;
             }
 
@@ -418,10 +381,6 @@
         });
 
         root.addEventListener('change', (e) => {
-            if (e.target.matches('[data-field="tipo"]')) {
-                syncFieldGroups(e.target.closest('form[data-add-item-form]'));
-                return;
-            }
             const row = e.target.closest('[data-row][data-tipo="checkbox"]');
             if (row && e.target.dataset.action === 'checkbox') {
                 window.LogZenData.setItemValue(dataAtual, row.dataset.cat, row.dataset.item, e.target.checked);
@@ -438,29 +397,6 @@
                 if (!row) return;
                 salvarNotaItemDebounced(e.target, dataAtual, row.dataset.cat, row.dataset.item);
             }
-        });
-
-        root.addEventListener('submit', (e) => {
-            const form = e.target.closest('form[data-add-item-form]');
-            if (!form) return;
-            e.preventDefault();
-            const nome = form.querySelector('[data-field="nome"]').value.trim();
-            if (!nome) return;
-            const tipo = form.querySelector('[data-field="tipo"]').value;
-            const dados = { nome, tipo };
-            if (tipo === 'contador' || tipo === 'contador-inverso') {
-                const unidade = form.querySelector('[data-field="unidade"]').value.trim();
-                if (unidade) dados.unidade = unidade;
-            }
-            if (tipo === 'tags') {
-                dados.opcoes = form.querySelector('[data-field="opcoes"]').value.split(',').map((s) => s.trim()).filter(Boolean);
-                if (dados.opcoes.length === 0) {
-                    window.alert('Informe ao menos uma opção de tag, separadas por vírgula.');
-                    return;
-                }
-            }
-            window.LogZenCatalog.addCustomItem(form.dataset.cat, dados);
-            reRenderPreservingState(root);
         });
     }
 
@@ -498,6 +434,196 @@
         }
     }
 
+    /* =====================================================================
+       Gestão de itens (Configurações) — issue #6. Adicionar/editar/excluir
+       vive aqui, fora da tela "Hoje". Editar nunca muda o `id` do item, e
+       excluir só tira do catálogo — os registros já salvos por data
+       continuam no armazenamento local, associados ao mesmo id.
+       ===================================================================== */
+    function renderItemConfigRow(cat, item) {
+        const detalhe = [TIPOS_LABEL[item.tipo] || item.tipo, item.unidade, (item.opcoes || []).join(', ')]
+            .filter(Boolean).join(' · ');
+        if (!item.custom) {
+            return `
+            <div class="flex items-center justify-between gap-3 py-3">
+                <div class="min-w-0">
+                    <p class="font-medium truncate">${escapeHtml(item.nome)}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhe)}</p>
+                </div>
+                <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">Padrão</span>
+            </div>`;
+        }
+        return `
+        <div data-item-config-row data-cat="${cat.id}" data-item="${item.id}">
+            <div class="flex items-center justify-between gap-3 py-3">
+                <div class="min-w-0">
+                    <p class="font-medium truncate">${escapeHtml(item.nome)}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhe)}</p>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" data-action="toggle-edit-item" aria-label="Editar ${escapeHtml(item.nome)}"
+                        class="w-8 h-8 rounded text-gray-400 hover:text-brand-600 dark:hover:text-accent-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button type="button" data-action="delete-item" aria-label="Excluir ${escapeHtml(item.nome)}"
+                        class="w-8 h-8 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                </div>
+            </div>
+            ${renderFormularioEditarItem(cat, item)}
+        </div>`;
+    }
+
+    function renderFormularioEditarItem(cat, item) {
+        const mostraUnidade = item.tipo === 'contador' || item.tipo === 'contador-inverso';
+        const mostraOpcoes = item.tipo === 'tags';
+        return `
+        <form data-edit-item-form data-cat="${cat.id}" data-item="${item.id}" hidden class="pb-3 space-y-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400">Tipo: ${escapeHtml(TIPOS_LABEL[item.tipo] || item.tipo)} — não pode ser alterado depois de criado.</p>
+            <div>
+                <label class="block text-xs font-medium mb-1">Nome</label>
+                <input type="text" data-field="nome" required maxlength="60" value="${escapeHtml(item.nome)}"
+                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            </div>
+            ${mostraUnidade ? `
+            <div>
+                <label class="block text-xs font-medium mb-1">Unidade (opcional)</label>
+                <input type="text" data-field="unidade" maxlength="30" value="${escapeHtml(item.unidade || '')}"
+                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            </div>` : ''}
+            ${mostraOpcoes ? `
+            <div>
+                <label class="block text-xs font-medium mb-1">Opções (separadas por vírgula)</label>
+                <input type="text" data-field="opcoes" value="${escapeHtml((item.opcoes || []).join(', '))}"
+                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            </div>` : ''}
+            <div class="flex items-center gap-2 pt-1">
+                <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Salvar</button>
+                <button type="button" data-action="cancel-edit-item" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+            </div>
+        </form>`;
+    }
+
+    function renderCategoriaConfig(cat) {
+        const itensHtml = cat.itens.map((item) => renderItemConfigRow(cat, item)).join('');
+        return `
+        <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold flex items-center gap-2">
+                <i aria-hidden="true" class="fa-solid ${cat.icone} text-brand-600 dark:text-accent-400"></i>
+                ${escapeHtml(cat.nome)}
+            </div>
+            <div class="px-4 divide-y divide-gray-100 dark:divide-gray-700">${itensHtml}</div>
+            ${renderFormularioNovoItem(cat)}
+        </div>`;
+    }
+
+    function renderItensConfig() {
+        if (!itensConfigRootEl) return;
+        const categorias = window.LogZenCatalog.getCategorias();
+        itensConfigRootEl.innerHTML = categorias.map((cat) => renderCategoriaConfig(cat)).join('');
+    }
+
+    function wireItensConfig(root) {
+        root.addEventListener('click', (e) => {
+            const toggleAddBtn = e.target.closest('[data-action="toggle-add-form"]');
+            if (toggleAddBtn) {
+                const form = toggleAddBtn.nextElementSibling;
+                form.hidden = !form.hidden;
+                if (!form.hidden) {
+                    syncFieldGroups(form);
+                    form.querySelector('[data-field="nome"]').focus();
+                }
+                return;
+            }
+
+            const cancelAddBtn = e.target.closest('[data-action="cancel-add-form"]');
+            if (cancelAddBtn) {
+                const form = cancelAddBtn.closest('form[data-add-item-form]');
+                form.reset();
+                syncFieldGroups(form);
+                form.hidden = true;
+                return;
+            }
+
+            const toggleEditBtn = e.target.closest('[data-action="toggle-edit-item"]');
+            if (toggleEditBtn) {
+                const form = toggleEditBtn.closest('[data-item-config-row]').querySelector('form[data-edit-item-form]');
+                form.hidden = !form.hidden;
+                if (!form.hidden) form.querySelector('[data-field="nome"]').focus();
+                return;
+            }
+
+            const cancelEditBtn = e.target.closest('[data-action="cancel-edit-item"]');
+            if (cancelEditBtn) {
+                renderItensConfig(); // descarta edição não salva, recolhendo o formulário
+                return;
+            }
+
+            const deleteBtn = e.target.closest('[data-action="delete-item"]');
+            if (deleteBtn) {
+                const row = deleteBtn.closest('[data-item-config-row]');
+                const nome = row.querySelector('p.font-medium').textContent;
+                if (!window.confirm(`Excluir "${nome}"? Os registros já salvos para este item continuam guardados — ele só deixa de aparecer na tela e no catálogo.`)) return;
+                window.LogZenCatalog.removeCustomItem(row.dataset.cat, row.dataset.item);
+                renderItensConfig();
+                sincronizarHoje();
+                return;
+            }
+        });
+
+        root.addEventListener('change', (e) => {
+            if (e.target.matches('[data-field="tipo"]')) syncFieldGroups(e.target.closest('form[data-add-item-form]'));
+        });
+
+        root.addEventListener('submit', (e) => {
+            const addForm = e.target.closest('form[data-add-item-form]');
+            if (addForm) {
+                e.preventDefault();
+                const nome = addForm.querySelector('[data-field="nome"]').value.trim();
+                if (!nome) return;
+                const tipo = addForm.querySelector('[data-field="tipo"]').value;
+                const dados = { nome, tipo };
+                if (tipo === 'contador' || tipo === 'contador-inverso') {
+                    const unidade = addForm.querySelector('[data-field="unidade"]').value.trim();
+                    if (unidade) dados.unidade = unidade;
+                }
+                if (tipo === 'tags') {
+                    dados.opcoes = addForm.querySelector('[data-field="opcoes"]').value.split(',').map((s) => s.trim()).filter(Boolean);
+                    if (dados.opcoes.length === 0) {
+                        window.alert('Informe ao menos uma opção de tag, separadas por vírgula.');
+                        return;
+                    }
+                }
+                window.LogZenCatalog.addCustomItem(addForm.dataset.cat, dados);
+                renderItensConfig();
+                sincronizarHoje();
+                return;
+            }
+
+            const editForm = e.target.closest('form[data-edit-item-form]');
+            if (editForm) {
+                e.preventDefault();
+                const nome = editForm.querySelector('[data-field="nome"]').value.trim();
+                if (!nome) return;
+                const dados = { nome };
+                const unidadeEl = editForm.querySelector('[data-field="unidade"]');
+                if (unidadeEl) dados.unidade = unidadeEl.value.trim();
+                const opcoesEl = editForm.querySelector('[data-field="opcoes"]');
+                if (opcoesEl) {
+                    dados.opcoes = opcoesEl.value.split(',').map((s) => s.trim()).filter(Boolean);
+                    if (dados.opcoes.length === 0) {
+                        window.alert('Informe ao menos uma opção de tag, separadas por vírgula.');
+                        return;
+                    }
+                }
+                window.LogZenCatalog.updateCustomItem(editForm.dataset.cat, editForm.dataset.item, dados);
+                renderItensConfig();
+                sincronizarHoje();
+            }
+        });
+    }
+
     function init() {
         rootEl = $('#hojeRoot');
         if (!rootEl) return;
@@ -512,6 +638,12 @@
         if (btnProximo) btnProximo.addEventListener('click', () => irParaDia(1));
         const btnVoltar = $('#hojeVoltarHoje');
         if (btnVoltar) btnVoltar.addEventListener('click', irParaHoje);
+
+        itensConfigRootEl = $('#itensConfigRoot');
+        if (itensConfigRootEl) {
+            renderItensConfig();
+            wireItensConfig(itensConfigRootEl);
+        }
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

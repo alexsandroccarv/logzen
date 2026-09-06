@@ -56,6 +56,23 @@ window.LogZenCatalog = (function () {
         return item;
     }
 
+    // Edita nome/unidade/opções de um item customizado — issue #6. O `id`
+    // nunca muda (mesmo que o nome mude), e o `tipo` não é editável aqui,
+    // para que o histórico já salvo (guardado pelo id) continue válido.
+    function updateCustomItem(categoriaId, itemId, dados) {
+        const all = readCustom();
+        const lista = all[categoriaId];
+        const item = lista && lista.find((i) => i.id === itemId);
+        if (!item) return;
+        item.nome = dados.nome;
+        if (item.tipo === 'contador' || item.tipo === 'contador-inverso') {
+            if (dados.unidade) item.unidade = dados.unidade;
+            else delete item.unidade;
+        }
+        if (item.tipo === 'tags') item.opcoes = dados.opcoes || [];
+        writeCustom(all);
+    }
+
     function removeCustomItem(categoriaId, itemId) {
         const all = readCustom();
         if (!all[categoriaId]) return;
@@ -72,5 +89,5 @@ window.LogZenCatalog = (function () {
         }));
     }
 
-    return { getCategorias, addCustomItem, removeCustomItem };
+    return { getCategorias, addCustomItem, updateCustomItem, removeCustomItem };
 })();

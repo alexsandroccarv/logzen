@@ -36,6 +36,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Exportar/importar dados (JSON) saiu do cabeçalho da tela "Hoje" e virou
   uma seção "Salvar/backup" em Configurações, com rótulos completos
   (issue #4).
+- Adicionar/editar/excluir item saiu da tela "Hoje" e virou a seção
+  "Itens rastreados" em Configurações, com todas as categorias e itens
+  padrão (somente leitura) e customizados (editáveis). Editar agora é
+  possível (nome, unidade ou opções — o tipo de input não muda depois de
+  criado). Excluir continua **sem apagar os registros já salvos**: o
+  `id` interno nunca muda e o histórico por data permanece no
+  armazenamento local, só o item deixa de aparecer (issue #6).
 
 ## [0.0.1] - Base inicial
 
