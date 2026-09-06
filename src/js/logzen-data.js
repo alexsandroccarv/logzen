@@ -5,6 +5,10 @@
    ========================================================================== */
 window.LogZenData = (function () {
     const STORAGE_KEY = 'logzen:entries:v1';
+    // Regra 1-3-5 (issue #20): "Objetivos do dia" tem um teto rígido de
+    // itens — usado tanto pelo formulário de adicionar quanto pela
+    // migração automática abaixo, para nunca passar disso.
+    const LIMITE_OBJETIVOS_DIA = 10;
 
     function todayKey(d) {
         const date = d || new Date();
@@ -119,17 +123,22 @@ window.LogZenData = (function () {
     // foi migrado é copiado para hoje; o original fica marcado como
     // "migrado" no dia de origem (congelado, só como registro histórico) —
     // assim não é migrado de novo da próxima vez. Olha até 60 dias para trás.
+    // Respeita o limite de objetivos (issue #20): se hoje já estiver cheio,
+    // o pendente continua sem migrar (não marca migrado, não perde o
+    // registro) — tenta de novo num próximo dia com espaço livre.
     function migrarObjetivosPendentes(hojeKey) {
         const hoje = getObjetivos(hojeKey);
         let mudouHoje = false;
         const cursor = new Date(hojeKey + 'T00:00:00');
         for (let i = 0; i < 60; i += 1) {
+            if (hoje.length >= LIMITE_OBJETIVOS_DIA) break;
             cursor.setDate(cursor.getDate() - 1);
             const diaChave = todayKey(cursor);
             const lista = getObjetivos(diaChave);
             if (!lista.length) continue;
             let mudouEsseDia = false;
             lista.forEach((o) => {
+                if (hoje.length >= LIMITE_OBJETIVOS_DIA) return;
                 if (!o.feito && !o.migrado) {
                     o.migrado = true;
                     mudouEsseDia = true;
@@ -168,5 +177,6 @@ window.LogZenData = (function () {
         getItemNota, setItemNota, getObjetivos, setObjetivos,
         getObjetivoNota, setObjetivoNota, migrarObjetivosPendentes,
         getNota, setNota, exportJSON, importJSON,
+        LIMITE_OBJETIVOS_DIA,
     };
 })();

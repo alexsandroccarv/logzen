@@ -313,17 +313,21 @@
     function renderObjetivos(dateKey) {
         const lista = window.LogZenData.getObjetivos(dateKey);
         const temAtivos = lista.some((o) => !o.migrado);
+        const limite = window.LogZenData.LIMITE_OBJETIVOS_DIA;
+        const atingiuLimite = lista.length >= limite;
         return `
         <details data-cat="__objetivos__" open class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
                 <i aria-hidden="true" class="fa-solid fa-bullseye text-brand-600 dark:text-accent-400"></i>
                 Objetivos do dia
                 <span class="text-xs font-normal text-gray-500 dark:text-gray-400">Regra 1-3-5 — arraste para definir a prioridade.</span>
+                <span data-objetivos-contador class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-auto">${lista.length}/${limite}</span>
             </summary>
             <div class="p-4 space-y-2">
                 <ul data-objetivos-lista class="space-y-2">${renderListaObjetivos(lista, dateKey)}</ul>
-                <p data-objetivos-vazio class="text-xs text-gray-500 dark:text-gray-400 ${temAtivos ? 'hidden' : ''}">Nenhum objetivo ainda — adicione um abaixo.</p>
-                <form data-add-objetivo-form class="flex items-center gap-2 pt-1">
+                <p data-objetivos-vazio class="text-xs text-gray-500 dark:text-gray-400 ${temAtivos ? 'hidden' : ''}">Nenhum objetivo ainda — adicione um abaixo, ou envie do Backlog.</p>
+                <p data-objetivos-limite class="text-xs text-amber-600 dark:text-amber-400 ${atingiuLimite ? '' : 'hidden'}">Limite de ${limite} objetivos atingido — conclua ou remova algum para adicionar outro.</p>
+                <form data-add-objetivo-form class="flex items-center gap-2 pt-1" ${atingiuLimite ? 'hidden' : ''}>
                     <input type="text" data-field="texto" placeholder="Adicionar objetivo…" maxlength="140"
                         class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                     <button type="submit" aria-label="Adicionar objetivo" class="w-9 h-9 shrink-0 rounded bg-brand-600 dark:bg-accent-600 text-white flex items-center justify-center">
@@ -332,6 +336,23 @@
                 </form>
             </div>
         </details>`;
+    }
+
+    // Mantém o contador "(N/limite)" e a mensagem/formulário de limite
+    // sincronizados quando a lista muda por um caminho que só mexe no DOM
+    // (inserção/remoção incremental), sem recriar o bloco inteiro.
+    function atualizarContadorObjetivos(root, dateKey) {
+        const details = root.querySelector('[data-cat="__objetivos__"]');
+        if (!details) return;
+        const lista = window.LogZenData.getObjetivos(dateKey);
+        const limite = window.LogZenData.LIMITE_OBJETIVOS_DIA;
+        const contador = details.querySelector('[data-objetivos-contador]');
+        if (contador) contador.textContent = `${lista.length}/${limite}`;
+        const atingiuLimite = lista.length >= limite;
+        const msg = details.querySelector('[data-objetivos-limite]');
+        if (msg) msg.classList.toggle('hidden', !atingiuLimite);
+        const form = details.querySelector('form[data-add-objetivo-form]');
+        if (form) form.hidden = atingiuLimite;
     }
 
     function gerarIdObjetivo() {
@@ -485,6 +506,7 @@
                     const vazio = ul.parentElement.querySelector('[data-objetivos-vazio]');
                     if (vazio) vazio.classList.remove('hidden');
                 }
+                atualizarContadorObjetivos(root, dataAtual);
                 return;
             }
 
@@ -583,11 +605,16 @@
             const form = e.target.closest('form[data-add-objetivo-form]');
             if (!form) return;
             e.preventDefault();
+            const limite = window.LogZenData.LIMITE_OBJETIVOS_DIA;
+            const lista = window.LogZenData.getObjetivos(dataAtual);
+            if (lista.length >= limite) {
+                window.alert(`Objetivos do dia já tem o máximo de ${limite} itens — conclua ou remova algum antes de adicionar outro.`);
+                return;
+            }
             const input = form.querySelector('[data-field="texto"]');
             const texto = input.value.trim();
             if (!texto) return;
             const novo = { id: gerarIdObjetivo(), texto, feito: false };
-            const lista = window.LogZenData.getObjetivos(dataAtual);
             const indiceAtivos = lista.filter((o) => !o.migrado).length;
             lista.push(novo);
             window.LogZenData.setObjetivos(dataAtual, lista);
@@ -595,6 +622,7 @@
             container.querySelector('[data-objetivos-lista]').insertAdjacentHTML('beforeend', renderObjetivoItem(novo, indiceAtivos, dataAtual));
             const vazio = container.querySelector('[data-objetivos-vazio]');
             if (vazio) vazio.classList.add('hidden');
+            atualizarContadorObjetivos(root, dataAtual);
             input.value = '';
             input.focus();
         });
@@ -939,6 +967,13 @@
                 window.LogZenData.setObjetivos(dataAtual, novaLista);
                 recolorirObjetivos(rootEl);
             },
+        });
+
+        // Refaz a tela ao entrar na aba "Hoje" — cobre o caso de um objetivo
+        // ter sido enviado do Backlog enquanto o usuário estava em outra aba
+        // (issue #20), sem precisar religar nada.
+        document.addEventListener('tab:change', (e) => {
+            if (e.detail.tab === 'hoje' && rootEl) reRenderComEstado(rootEl, () => render(rootEl, dataAtual));
         });
 
         const btnAnterior = $('#hojeDiaAnterior');

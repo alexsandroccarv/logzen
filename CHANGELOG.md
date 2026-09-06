@@ -8,6 +8,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Nova aba "Backlog", ao lado de "Hoje": lista de coisas para fazer, com
+  projeto (opcional), ação, prazo início/fim (opcionais) e descrição.
+  Cada tarefa ganha um botão "Enviar para hoje" que cria o objetivo do
+  dia a partir dela (some da lista ativa e vai para "Enviadas", com
+  opção de desfazer). "Objetivos do dia" passa a ter um limite rígido
+  de 10 itens (regra 1-3-5) — tanto ao adicionar manualmente quanto ao
+  enviar do Backlog; a migração automática de pendências (issue #12)
+  respeita o mesmo limite, sem nunca perder um item pendente (issue #20).
 - Entregas: checkbox "Não entregue" ao lado de "Entregue" — os dois
   funcionam como um par (marcar um desmarca o outro); marcar "Não
   entregue" cancela uma confirmação de entrega em andamento (issue #19).
