@@ -6,7 +6,47 @@
    ========================================================================== */
 window.LogZenCatalog = (function () {
     const STORAGE_KEY = 'logzen:custom-items:v1';
+    const ORDEM_KEY = 'logzen:ordem:v1';
     const DIACRITICOS = /[̀-ͯ]/g;
+
+    function readOrdem() {
+        try {
+            const raw = localStorage.getItem(ORDEM_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function writeOrdem(ordem) {
+        try { localStorage.setItem(ORDEM_KEY, JSON.stringify(ordem)); }
+        catch (e) { /* storage indisponível — segue sem persistir */ }
+    }
+
+    // Ordem customizada (arrastar e soltar — issue #7), separada do
+    // catálogo. Itens/categorias ainda não posicionados manualmente ficam
+    // no fim, na ordem padrão.
+    function getOrdemCategorias() {
+        return readOrdem().categorias || [];
+    }
+
+    function setOrdemCategorias(ids) {
+        const ordem = readOrdem();
+        ordem.categorias = ids;
+        writeOrdem(ordem);
+    }
+
+    function getOrdemItens(categoriaId) {
+        const ordem = readOrdem();
+        return (ordem.itens && ordem.itens[categoriaId]) || [];
+    }
+
+    function setOrdemItens(categoriaId, ids) {
+        const ordem = readOrdem();
+        if (!ordem.itens) ordem.itens = {};
+        ordem.itens[categoriaId] = ids;
+        writeOrdem(ordem);
+    }
 
     function slug(nome) {
         return String(nome).toLowerCase().normalize('NFD').replace(DIACRITICOS, '')
@@ -80,14 +120,23 @@ window.LogZenCatalog = (function () {
         writeCustom(all);
     }
 
-    // Catálogo completo (padrão + customizado) para renderização.
+    // Catálogo completo (padrão + customizado), na ordem escolhida pelo
+    // usuário (issue #7), para renderização.
     function getCategorias() {
         const custom = readCustom();
-        return window.LOGZEN_CATEGORIES.map((cat) => ({
+        const base = window.LOGZEN_CATEGORIES.map((cat) => ({
             ...cat,
             itens: [...cat.itens, ...(custom[cat.id] || [])],
         }));
+        const categorias = window.LogZenReorder.aplicarOrdem(base, (c) => c.id, getOrdemCategorias());
+        return categorias.map((cat) => ({
+            ...cat,
+            itens: window.LogZenReorder.aplicarOrdem(cat.itens, (i) => i.id, getOrdemItens(cat.id)),
+        }));
     }
 
-    return { getCategorias, addCustomItem, updateCustomItem, removeCustomItem };
+    return {
+        getCategorias, addCustomItem, updateCustomItem, removeCustomItem,
+        getOrdemCategorias, setOrdemCategorias, getOrdemItens, setOrdemItens,
+    };
 })();

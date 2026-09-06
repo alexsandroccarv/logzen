@@ -205,7 +205,7 @@
     function renderCategoria(cat, dateKey, aberta) {
         const itensHtml = cat.itens.map((item) => (RENDERERS[item.tipo] || (() => ''))(cat, item, dateKey)).join('');
         return `
-        <details class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" ${aberta ? 'open' : ''}>
+        <details data-cat="${cat.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" ${aberta ? 'open' : ''}>
             <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
                 <i aria-hidden="true" class="fa-solid ${cat.icone} text-brand-600 dark:text-accent-400"></i>
                 ${escapeHtml(cat.nome)}
@@ -218,7 +218,7 @@
     function renderNota(dateKey) {
         const valor = window.LogZenData.getNota(dateKey);
         return `
-        <details class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" ${valor ? 'open' : ''}>
+        <details data-cat="__nota__" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" ${valor ? 'open' : ''}>
             <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
                 <i aria-hidden="true" class="fa-solid fa-note-sticky text-brand-600 dark:text-accent-400"></i>
                 Nota do dia
@@ -238,13 +238,17 @@
 
     // Roda `renderFn` recriando o HTML de `root` mas preservando quais
     // blocos de nível superior (<details>) estavam abertos/fechados — usado
-    // para atualizar a tela "Hoje" depois que a lista de itens muda em
-    // Configurações (issue #6), sem perder o que o usuário tinha aberto.
+    // para atualizar a tela "Hoje" depois que a lista de itens (issue #6) ou
+    // a ordem (issue #7) mudam em Configurações, sem perder o que o usuário
+    // tinha aberto. Casa por `data-cat`, não por posição — categorias podem
+    // ter sido reordenadas entre a captura e a recriação.
     function reRenderComEstado(root, renderFn) {
-        const abertos = Array.from(root.querySelectorAll(':scope > details')).map((d) => d.open);
+        const abertos = new Map(
+            Array.from(root.querySelectorAll(':scope > details[data-cat]')).map((d) => [d.dataset.cat, d.open])
+        );
         renderFn();
-        Array.from(root.querySelectorAll(':scope > details')).forEach((d, i) => {
-            if (abertos[i] !== undefined) d.open = abertos[i];
+        root.querySelectorAll(':scope > details[data-cat]').forEach((d) => {
+            if (abertos.has(d.dataset.cat)) d.open = abertos.get(d.dataset.cat);
         });
     }
 
@@ -440,13 +444,22 @@
        excluir só tira do catálogo — os registros já salvos por data
        continuam no armazenamento local, associados ao mesmo id.
        ===================================================================== */
+    // Alça de arrastar (issue #7) — comum a todo item, padrão ou customizado.
+    function dragHandle(label) {
+        return `<button type="button" data-item-drag-handle aria-label="Arrastar para reordenar ${escapeHtml(label)}"
+            class="w-7 h-7 -ml-1 shrink-0 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
+            <i aria-hidden="true" class="fa-solid fa-grip-vertical"></i>
+        </button>`;
+    }
+
     function renderItemConfigRow(cat, item) {
         const detalhe = [TIPOS_LABEL[item.tipo] || item.tipo, item.unidade, (item.opcoes || []).join(', ')]
             .filter(Boolean).join(' · ');
         if (!item.custom) {
             return `
-            <div class="flex items-center justify-between gap-3 py-3">
-                <div class="min-w-0">
+            <div data-item-row data-cat="${cat.id}" data-item="${item.id}" class="flex items-center justify-between gap-2 py-3">
+                ${dragHandle(item.nome)}
+                <div class="min-w-0 flex-1">
                     <p class="font-medium truncate">${escapeHtml(item.nome)}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhe)}</p>
                 </div>
@@ -454,9 +467,10 @@
             </div>`;
         }
         return `
-        <div data-item-config-row data-cat="${cat.id}" data-item="${item.id}">
-            <div class="flex items-center justify-between gap-3 py-3">
-                <div class="min-w-0">
+        <div data-item-row data-cat="${cat.id}" data-item="${item.id}">
+            <div class="flex items-center justify-between gap-2 py-3">
+                ${dragHandle(item.nome)}
+                <div class="min-w-0 flex-1">
                     <p class="font-medium truncate">${escapeHtml(item.nome)}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhe)}</p>
                 </div>
@@ -508,12 +522,16 @@
     function renderCategoriaConfig(cat) {
         const itensHtml = cat.itens.map((item) => renderItemConfigRow(cat, item)).join('');
         return `
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div data-cat-block data-cat="${cat.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold flex items-center gap-2">
+                <button type="button" data-cat-drag-handle aria-label="Arrastar para reordenar categoria ${escapeHtml(cat.nome)}"
+                    class="w-7 h-7 -ml-1 shrink-0 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
+                    <i aria-hidden="true" class="fa-solid fa-grip-vertical"></i>
+                </button>
                 <i aria-hidden="true" class="fa-solid ${cat.icone} text-brand-600 dark:text-accent-400"></i>
                 ${escapeHtml(cat.nome)}
             </div>
-            <div class="px-4 divide-y divide-gray-100 dark:divide-gray-700">${itensHtml}</div>
+            <div class="px-4 divide-y divide-gray-100 dark:divide-gray-700" data-cat-items-list>${itensHtml}</div>
             ${renderFormularioNovoItem(cat)}
         </div>`;
     }
@@ -548,7 +566,7 @@
 
             const toggleEditBtn = e.target.closest('[data-action="toggle-edit-item"]');
             if (toggleEditBtn) {
-                const form = toggleEditBtn.closest('[data-item-config-row]').querySelector('form[data-edit-item-form]');
+                const form = toggleEditBtn.closest('[data-item-row]').querySelector('form[data-edit-item-form]');
                 form.hidden = !form.hidden;
                 if (!form.hidden) form.querySelector('[data-field="nome"]').focus();
                 return;
@@ -562,7 +580,7 @@
 
             const deleteBtn = e.target.closest('[data-action="delete-item"]');
             if (deleteBtn) {
-                const row = deleteBtn.closest('[data-item-config-row]');
+                const row = deleteBtn.closest('[data-item-row]');
                 const nome = row.querySelector('p.font-medium').textContent;
                 if (!window.confirm(`Excluir "${nome}"? Os registros já salvos para este item continuam guardados — ele só deixa de aparecer na tela e no catálogo.`)) return;
                 window.LogZenCatalog.removeCustomItem(row.dataset.cat, row.dataset.item);
@@ -643,6 +661,29 @@
         if (itensConfigRootEl) {
             renderItensConfig();
             wireItensConfig(itensConfigRootEl);
+
+            // Arrastar para reordenar (issue #7) — ligado uma vez na raiz
+            // estável; sobrevive às recriações de HTML feitas por
+            // renderItensConfig() (add/editar/excluir item).
+            window.LogZenReorder.ativar(itensConfigRootEl, {
+                itemSelector: '[data-cat-block]',
+                handleSelector: '[data-cat-drag-handle]',
+                getId: (el) => el.dataset.cat,
+                onReorder: (ids) => {
+                    window.LogZenCatalog.setOrdemCategorias(ids);
+                    sincronizarHoje();
+                },
+            });
+            window.LogZenReorder.ativar(itensConfigRootEl, {
+                itemSelector: '[data-item-row]',
+                handleSelector: '[data-item-drag-handle]',
+                groupSelector: '[data-cat-block]',
+                getId: (el) => el.dataset.item,
+                onReorder: (ids, grupo) => {
+                    window.LogZenCatalog.setOrdemItens(grupo.dataset.cat, ids);
+                    sincronizarHoje();
+                },
+            });
         }
     }
 

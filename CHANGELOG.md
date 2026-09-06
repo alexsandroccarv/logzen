@@ -31,6 +31,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   data (a seta de avançar trava no dia atual, sem ir para o futuro) e
   link "Voltar para hoje" quando estiver em outro dia. Categorias, nota
   do dia e notas por item passam a refletir o dia selecionado (issue #5).
+- Reordenar categorias e itens por arrastar e soltar, na seção "Itens
+  rastreados" em Configurações (issue #6): cada categoria e cada item
+  (padrão ou customizado) ganha uma alça de arrastar. Implementado com
+  Pointer Events (funciona em toque, não só com mouse); itens só
+  reordenam dentro da própria categoria. A ordem escolhida é salva
+  localmente e aplicada também na tela "Hoje" (issue #7).
 
 ### Changed
 - Exportar/importar dados (JSON) saiu do cabeçalho da tela "Hoje" e virou
