@@ -84,7 +84,27 @@ window.LogZenFilmes = (function () {
         return dados;
     }
 
-    return { listar, salvar, remover, obter, atualizar, getApiKey, setApiKey, buscarPorTitulo, buscarDetalhes };
+    // Reconhece um link do YouTube colado no campo de busca (watch/youtu.be/
+    // shorts/embed) e devolve o id do vídeo, ou null se não for um link
+    // reconhecido.
+    function extrairYoutubeId(texto) {
+        const m = String(texto).match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
+        return m ? m[1] : null;
+    }
+
+    // Metadados de um vídeo via oEmbed do YouTube — público, sem exigir
+    // chave (diferente da OMDb), então funciona mesmo sem a chave da OMDb
+    // configurada. Traz só título/miniatura/canal (não há duração/gênero).
+    async function buscarYoutube(url) {
+        const resp = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+        if (!resp.ok) throw new Error('Vídeo do YouTube não encontrado (link inválido ou privado).');
+        return resp.json();
+    }
+
+    return {
+        listar, salvar, remover, obter, atualizar, getApiKey, setApiKey,
+        buscarPorTitulo, buscarDetalhes, extrairYoutubeId, buscarYoutube,
+    };
 })();
 
 (function () {
@@ -248,21 +268,20 @@ window.LogZenFilmes = (function () {
                 <i aria-hidden="true" class="fa-solid fa-plus"></i> Registrar filme/série
             </button>
             <div data-add-filme-body hidden class="space-y-3">
-                ${temChave ? `
                 <form data-form-busca class="flex items-center gap-2">
-                    <input type="text" data-field="busca" placeholder="Título do filme ou série…"
+                    <input type="text" data-field="busca" placeholder="Título do filme/série, ou cole um link do YouTube…"
                         class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                     <button type="submit" class="px-3 py-2 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700 shrink-0">Buscar</button>
                 </form>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    ${temChave
+                        ? 'Busca por título via OMDb, ou cole um link do YouTube para trazer os dados direto de lá (sem precisar de chave).'
+                        : 'Sem chave da OMDb configurada a busca por título não funciona, mas colar um link do YouTube funciona igual. Configure sua chave em Configurações → Filmes para também buscar por título, ou registre manualmente abaixo.'}
+                </p>
                 <p data-busca-status class="text-xs text-gray-500 dark:text-gray-400 hidden"></p>
                 <div data-resultados-busca class="space-y-2"></div>
-                ` : `
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Configure sua chave da OMDb API em Configurações → Filmes
-                    para buscar automaticamente, ou registre manualmente abaixo.
-                </p>`}
                 <button type="button" data-action="adicionar-manual" class="text-xs font-medium text-brand-700 dark:text-accent-400 hover:underline">
-                    ${temChave ? 'Ou adicionar sem buscar' : 'Adicionar manualmente'}
+                    Ou adicionar sem buscar
                 </button>
             </div>
         </div>`;
@@ -452,6 +471,36 @@ window.LogZenFilmes = (function () {
                 if (!query) return;
                 const resultadosEl = rootEl.querySelector('[data-resultados-busca]');
                 const status = rootEl.querySelector('[data-busca-status]');
+
+                const youtubeId = window.LogZenFilmes.extrairYoutubeId(query);
+                if (youtubeId) {
+                    try {
+                        if (status) { status.textContent = 'Buscando no YouTube…'; status.classList.remove('hidden'); }
+                        const d = await window.LogZenFilmes.buscarYoutube(query);
+                        if (resultadosEl) resultadosEl.innerHTML = '';
+                        if (status) status.classList.add('hidden');
+                        rascunho = {
+                            manual: false,
+                            titulo: d.title || '',
+                            tipo: 'show',
+                            imdbID: '',
+                            poster: d.thumbnail_url || '',
+                            ano: '',
+                            tempo: '',
+                            genero: d.author_name || '',
+                            premios: '',
+                            assistidoEm: window.LogZenData.todayKey(),
+                            estrelas: 0,
+                            opiniao: '',
+                            local: 'youtube', servico: '', servicoOutro: '', temporada: '', episodio: '', episodioTitulo: '',
+                        };
+                        render();
+                    } catch (err) {
+                        if (status) { status.textContent = err.message; status.classList.remove('hidden'); }
+                    }
+                    return;
+                }
+
                 try {
                     if (status) { status.textContent = 'Buscando…'; status.classList.remove('hidden'); }
                     const resultados = await window.LogZenFilmes.buscarPorTitulo(query);
