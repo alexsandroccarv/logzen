@@ -8,6 +8,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Entregas: campo "Entregue" (checkbox + data) em cada entrega aguardando
+  recebimento. Ao marcar, confirma a data (padrão hoje, editável) e o
+  registro sai da lista ativa e vai para uma seção "Arquivo" (recolhível),
+  mostrando "Entregue em DD/MM/AAAA"; dá para desfazer (volta para
+  aguardando entrega) ou remover definitivamente em qualquer um dos dois
+  lugares (issue #16).
 - Nova aba "Entregas", entre "Hoje" e "Filmes": cadastro de compras
   aguardando entrega (nome, data da compra, previsão de entrega,
   loja/e-commerce, número de rastreio e observações). Cadastro 100%
