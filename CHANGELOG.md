@@ -28,6 +28,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   existe uma nota salva para aquele item, mesmo com a caixa fechada
   (issue #3).
 
+### Changed
+- Exportar/importar dados (JSON) saiu do cabeçalho da tela "Hoje" e virou
+  uma seção "Salvar/backup" em Configurações, com rótulos completos
+  (issue #4).
+
 ## [0.0.1] - Base inicial
 
 ### Adicionado
