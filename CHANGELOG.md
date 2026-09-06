@@ -8,6 +8,15 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Livros: Google Books API como segunda fonte de busca — quando a Open
+  Library não encontra o título (comum para livros indies/menos
+  conhecidos), cai automaticamente para o Google Books (também
+  gratuito, sem chave), com aviso na tela de que o resultado veio de
+  lá (issue #24).
+- Itens rastreados: novo tipo de item **Horário** (início e fim, ex.:
+  "Horário de sono"), com dois campos de hora na tela "Hoje", editáveis
+  a qualquer momento — segue o mesmo padrão de nota por item já usado
+  nos demais tipos (issue #23).
 - Backlog: o campo "Projeto" virou um seletor com os projetos já usados
   (evita duplicar por variação de digitação), com opção "Outro" para
   criar um novo; a lista de tarefas (pendentes e enviadas) passa a ser
