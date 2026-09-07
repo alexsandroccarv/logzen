@@ -14,6 +14,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   salvos (issue #30).
 
 ### Added
+- Vídeos: **TMDb** e **TVmaze** como novas fontes de busca, além da OMDb
+  — TMDb (filmes e séries, chave própria gratuita, inclui runtime por
+  episódio) e TVmaze (só séries, sem exigir chave nenhuma). Em
+  Configurações → Vídeos dá para habilitar/desabilitar cada fonte e
+  definir a ordem de consulta (a primeira habilitada/configurada que
+  achar resultado é usada); fonte sem chave ou desabilitada é pulada
+  silenciosamente (issue #31).
 - Vídeos: campo de **duração do episódio**, editável e sempre exibido
   junto ao identificador do episódio (ex.: "T1E2 · 42 min") — antes só
   vinha do OMDb e não podia ser definida manualmente (issue #30).

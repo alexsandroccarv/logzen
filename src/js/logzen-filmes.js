@@ -1,18 +1,31 @@
 /* ==========================================================================
    LogZen — Vídeos (issue #11): registro de filmes, séries, shows e
    palestras assistidos, com busca de metadados (pôster, duração, prêmios)
-   via OMDb API e avaliação pessoal (estrelas + opinião). Site estático,
-   sem backend — por isso a chave da OMDb é a do PRÓPRIO usuário (colada em
-   Configurações → Vídeos, guardada só no localStorage), nunca embutida no
-   código publicado. Sem chave configurada, o registro manual (sem busca)
-   continua funcionando. Seção renomeada de "Filmes" para "Vídeos" (issue
-   #30) — nomes internos (módulo, ids, chaves de armazenamento) preservados
-   para não perder dados já salvos. Temporada, Episódio e Duração do
-   episódio só aparecem para o tipo Série (issue #30).
+   e avaliação pessoal (estrelas + opinião). Site estático, sem backend —
+   por isso as chaves de API são do PRÓPRIO usuário (coladas em
+   Configurações → Vídeos, guardadas só no localStorage), nunca embutidas
+   no código publicado. Sem nenhuma fonte configurada/habilitada, o
+   registro manual (sem busca) continua funcionando. Seção renomeada de
+   "Filmes" para "Vídeos" (issue #30) — nomes internos (módulo, ids, chaves
+   de armazenamento) preservados para não perder dados já salvos.
+
+   Três fontes de busca (issue #31), tentadas em ordem configurável até uma
+   achar resultado — cada uma normalizada para o mesmo formato antes de
+   exibir (mesmo princípio do multi-fonte de Livros):
+     - TMDb: filmes e séries, chave própria gratuita, inclui runtime por
+       episódio.
+     - OMDb: filmes e séries, chave própria gratuita (fonte original).
+     - TVmaze: só séries, sem exigir chave nenhuma.
+   Fonte desabilitada ou sem chave configurada (quando exigida) é pulada
+   silenciosamente na cadeia, sem gerar erro.
    ========================================================================== */
 window.LogZenFilmes = (function () {
     const ENTRIES_KEY = 'logzen:filmes:v1';
     const APIKEY_KEY = 'logzen:omdb-key:v1';
+    const TMDB_APIKEY_KEY = 'logzen:tmdb-key:v1';
+    const FONTES_ORDEM_KEY = 'logzen:filmes:fontes-ordem:v1';
+    const FONTES_HABILITADAS_KEY = 'logzen:filmes:fontes-habilitadas:v1';
+    const FONTES_PADRAO = ['tmdb', 'omdb', 'tvmaze'];
 
     function readEntries() {
         try {
@@ -68,24 +81,172 @@ window.LogZenFilmes = (function () {
         } catch (e) { /* storage indisponível — segue sem persistir */ }
     }
 
-    async function buscarPorTitulo(query) {
+    function getTmdbApiKey() {
+        try { return localStorage.getItem(TMDB_APIKEY_KEY) || ''; }
+        catch (e) { return ''; }
+    }
+
+    function setTmdbApiKey(key) {
+        try {
+            if (key) localStorage.setItem(TMDB_APIKEY_KEY, key);
+            else localStorage.removeItem(TMDB_APIKEY_KEY);
+        } catch (e) { /* storage indisponível — segue sem persistir */ }
+    }
+
+    // Ordem de consulta entre as fontes (issue #31) — array com as 3 sempre
+    // presentes; a primeira habilitada/configurada que achar resultado é
+    // usada. Guardado separado de "habilitadas" para não perder a posição
+    // escolhida ao desabilitar e reabilitar uma fonte depois.
+    function getFontesOrdem() {
+        try {
+            const raw = localStorage.getItem(FONTES_ORDEM_KEY);
+            const arr = raw ? JSON.parse(raw) : null;
+            if (Array.isArray(arr) && arr.length === FONTES_PADRAO.length && FONTES_PADRAO.every((f) => arr.includes(f))) return arr;
+        } catch (e) { /* ignora e usa padrão */ }
+        return FONTES_PADRAO.slice();
+    }
+
+    function setFontesOrdem(ordem) {
+        try { localStorage.setItem(FONTES_ORDEM_KEY, JSON.stringify(ordem)); }
+        catch (e) { /* storage indisponível — segue sem persistir */ }
+    }
+
+    function getFontesHabilitadas() {
+        try {
+            const raw = localStorage.getItem(FONTES_HABILITADAS_KEY);
+            const obj = raw ? JSON.parse(raw) : null;
+            if (obj && typeof obj === 'object') {
+                return { tmdb: obj.tmdb !== false, omdb: obj.omdb !== false, tvmaze: obj.tvmaze !== false };
+            }
+        } catch (e) { /* ignora e usa padrão */ }
+        return { tmdb: true, omdb: true, tvmaze: true };
+    }
+
+    function setFonteHabilitada(fonte, habilitada) {
+        const atual = getFontesHabilitadas();
+        atual[fonte] = !!habilitada;
+        try { localStorage.setItem(FONTES_HABILITADAS_KEY, JSON.stringify(atual)); }
+        catch (e) { /* storage indisponível — segue sem persistir */ }
+    }
+
+    async function buscarOmdbLista(query) {
         const key = getApiKey();
-        if (!key) throw new Error('Configure sua chave da OMDb API em Configurações → Vídeos.');
         const resp = await fetch(`https://www.omdbapi.com/?apikey=${encodeURIComponent(key)}&s=${encodeURIComponent(query)}`);
         if (!resp.ok) throw new Error('Falha ao conectar com a OMDb API.');
         const dados = await resp.json();
-        if (dados.Response === 'False') throw new Error(dados.Error || 'Nada encontrado.');
-        return dados.Search || [];
+        if (dados.Response === 'False') return [];
+        return (dados.Search || []).map((it) => ({
+            id: `omdb-${it.imdbID}`, fonte: 'omdb', refId: it.imdbID,
+            tipo: it.Type === 'series' ? 'series' : 'movie',
+            titulo: it.Title, ano: it.Year || '',
+            poster: it.Poster && it.Poster !== 'N/A' ? it.Poster : '',
+        }));
     }
 
-    async function buscarDetalhes(imdbID) {
+    async function buscarDetalhesOmdb(imdbID) {
         const key = getApiKey();
-        if (!key) throw new Error('Configure sua chave da OMDb API em Configurações → Vídeos.');
         const resp = await fetch(`https://www.omdbapi.com/?apikey=${encodeURIComponent(key)}&i=${encodeURIComponent(imdbID)}&plot=short`);
         if (!resp.ok) throw new Error('Falha ao conectar com a OMDb API.');
         const dados = await resp.json();
         if (dados.Response === 'False') throw new Error(dados.Error || 'Não encontrado.');
-        return dados;
+        return {
+            titulo: dados.Title, tipo: dados.Type === 'series' ? 'series' : 'movie', imdbID: dados.imdbID,
+            poster: dados.Poster && dados.Poster !== 'N/A' ? dados.Poster : '',
+            ano: dados.Year || '', tempo: dados.Runtime && dados.Runtime !== 'N/A' ? dados.Runtime : '',
+            genero: dados.Genre && dados.Genre !== 'N/A' ? dados.Genre : '',
+            premios: dados.Awards && dados.Awards !== 'N/A' ? dados.Awards : '',
+        };
+    }
+
+    async function buscarTmdbLista(query) {
+        const key = getTmdbApiKey();
+        const resp = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${encodeURIComponent(key)}&query=${encodeURIComponent(query)}&language=pt-BR`);
+        if (!resp.ok) throw new Error('Falha ao conectar com a TMDb API.');
+        const dados = await resp.json();
+        return (dados.results || [])
+            .filter((it) => it.media_type === 'movie' || it.media_type === 'tv')
+            .map((it) => ({
+                id: `tmdb-${it.media_type}-${it.id}`, fonte: 'tmdb', refId: it.id, mediaType: it.media_type,
+                tipo: it.media_type === 'tv' ? 'series' : 'movie',
+                titulo: it.title || it.name || '',
+                ano: (it.release_date || it.first_air_date || '').slice(0, 4),
+                poster: it.poster_path ? `https://image.tmdb.org/t/p/w200${it.poster_path}` : '',
+            }));
+    }
+
+    async function buscarDetalhesTmdb(id, mediaType) {
+        const key = getTmdbApiKey();
+        const caminho = mediaType === 'tv' ? 'tv' : 'movie';
+        const resp = await fetch(`https://api.themoviedb.org/3/${caminho}/${encodeURIComponent(id)}?api_key=${encodeURIComponent(key)}&language=pt-BR`);
+        if (!resp.ok) throw new Error('Falha ao conectar com a TMDb API.');
+        const d = await resp.json();
+        const tempoMin = mediaType === 'tv' ? (d.episode_run_time || [])[0] : d.runtime;
+        return {
+            titulo: d.title || d.name || '', tipo: mediaType === 'tv' ? 'series' : 'movie',
+            poster: d.poster_path ? `https://image.tmdb.org/t/p/w200${d.poster_path}` : '',
+            ano: (d.release_date || d.first_air_date || '').slice(0, 4),
+            tempo: tempoMin ? `${tempoMin} min` : '',
+            genero: (d.genres || []).map((g) => g.name).join(', '),
+            premios: '',
+        };
+    }
+
+    // TVmaze já traz tudo na busca (sem chave) — sem chamada extra de
+    // detalhes, o objeto normalizado vai junto no próprio resultado.
+    async function buscarTvmazeLista(query) {
+        const resp = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`);
+        if (!resp.ok) throw new Error('Falha ao conectar com a TVmaze API.');
+        const dados = await resp.json();
+        return (dados || []).map((r) => {
+            const show = r.show || {};
+            const detalhes = {
+                titulo: show.name || '', tipo: 'series',
+                poster: show.image ? (show.image.medium || show.image.original || '') : '',
+                ano: show.premiered ? show.premiered.slice(0, 4) : '',
+                tempo: show.runtime ? `${show.runtime} min` : '',
+                genero: (show.genres || []).join(', '),
+                premios: '',
+            };
+            return {
+                id: `tvmaze-${show.id}`, fonte: 'tvmaze', refId: show.id, tipo: 'series',
+                titulo: detalhes.titulo, ano: detalhes.ano, poster: detalhes.poster, detalhes,
+            };
+        });
+    }
+
+    // Tenta as fontes habilitadas/configuradas na ordem escolhida em
+    // Configurações → Vídeos, até uma achar resultado. Fonte sem chave
+    // (quando exige) ou desabilitada é pulada silenciosamente.
+    async function buscarPorTitulo(query) {
+        const ordem = getFontesOrdem();
+        const habilitadas = getFontesHabilitadas();
+        let ultimoErro = null;
+        let algumaTentativa = false;
+        for (const fonte of ordem) {
+            if (!habilitadas[fonte]) continue;
+            if (fonte === 'omdb' && !getApiKey()) continue;
+            if (fonte === 'tmdb' && !getTmdbApiKey()) continue;
+            algumaTentativa = true;
+            try {
+                const resultados = fonte === 'tmdb' ? await buscarTmdbLista(query)
+                    : fonte === 'tvmaze' ? await buscarTvmazeLista(query)
+                    : await buscarOmdbLista(query);
+                if (resultados.length) return resultados;
+            } catch (e) { ultimoErro = e; }
+        }
+        if (ultimoErro) throw ultimoErro;
+        if (!algumaTentativa) throw new Error('Nenhuma fonte de busca habilitada/configurada — configure em Configurações → Vídeos, ou registre manualmente.');
+        throw new Error('Nada encontrado.');
+    }
+
+    // Busca os detalhes completos de um resultado já normalizado (issue
+    // #31) — despacha para a fonte de origem; TVmaze não precisa de nova
+    // chamada, os dados já vieram completos na busca.
+    async function buscarDetalhesPorResultado(item) {
+        if (item.fonte === 'omdb') return buscarDetalhesOmdb(item.refId);
+        if (item.fonte === 'tmdb') return buscarDetalhesTmdb(item.refId, item.mediaType);
+        if (item.fonte === 'tvmaze') return item.detalhes;
+        return null;
     }
 
     // Reconhece um link do YouTube colado no campo de busca (watch/youtu.be/
@@ -107,7 +268,9 @@ window.LogZenFilmes = (function () {
 
     return {
         listar, salvar, remover, obter, atualizar, getApiKey, setApiKey,
-        buscarPorTitulo, buscarDetalhes, extrairYoutubeId, buscarYoutube,
+        getTmdbApiKey, setTmdbApiKey, getFontesOrdem, setFontesOrdem,
+        getFontesHabilitadas, setFonteHabilitada,
+        buscarPorTitulo, buscarDetalhesPorResultado, extrairYoutubeId, buscarYoutube,
     };
 })();
 
@@ -116,6 +279,8 @@ window.LogZenFilmes = (function () {
     const TIPO_LABEL = { movie: 'Filme', series: 'Série', episode: 'Episódio', show: 'Show', palestra: 'Palestra' };
     const LOCAL_LABEL = { tv_aberta: 'TV aberta', cinema: 'Cinema', streaming: 'Streaming', youtube: 'YouTube' };
     const SERVICOS_STREAMING = ['Netflix', 'Mubi', 'HBO Max', 'Amazon Prime Video', 'Apple TV+', 'Disney+', 'Globoplay', 'Star+', 'Paramount+', 'Outro'];
+    const FONTES_LABEL = { tmdb: 'TMDb', omdb: 'OMDb', tvmaze: 'TVmaze' };
+    const FONTES_LABEL_CONFIG = { tmdb: 'TMDb', omdb: 'OMDb', tvmaze: 'TVmaze (sem chave)' };
 
     function escapeHtml(s) {
         return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -141,18 +306,56 @@ window.LogZenFilmes = (function () {
     }
 
     function renderResultadoBusca(item) {
-        const poster = item.Poster && item.Poster !== 'N/A' ? item.Poster : '';
         return `
-        <button type="button" data-action="selecionar-resultado" data-imdbid="${escapeHtml(item.imdbID)}"
+        <button type="button" data-action="selecionar-resultado" data-id="${escapeHtml(item.id)}"
             class="w-full flex items-center gap-3 p-2 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-left">
-            ${poster
-                ? `<img src="${escapeHtml(poster)}" alt="" class="w-10 h-14 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
+            ${item.poster
+                ? `<img src="${escapeHtml(item.poster)}" alt="" class="w-10 h-14 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
                 : `<div class="w-10 h-14 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-film"></i></div>`}
             <div class="min-w-0">
-                <p class="font-medium truncate">${escapeHtml(item.Title)}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(item.Year || '')} · ${escapeHtml(TIPO_LABEL[item.Type] || item.Type || '')}</p>
+                <p class="font-medium truncate">${escapeHtml(item.titulo)}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(item.ano || '')} · ${escapeHtml(TIPO_LABEL[item.tipo] || item.tipo || '')} · ${escapeHtml(FONTES_LABEL[item.fonte] || item.fonte)}</p>
             </div>
         </button>`;
+    }
+
+    function renderFontesConfig() {
+        const ordem = window.LogZenFilmes.getFontesOrdem();
+        const habilitadas = window.LogZenFilmes.getFontesHabilitadas();
+        return ordem.map((fonte, i) => `
+            <div class="flex items-center gap-2 p-2 rounded border border-gray-200 dark:border-gray-700">
+                <input type="checkbox" data-action="toggle-fonte" data-fonte="${fonte}" ${habilitadas[fonte] ? 'checked' : ''}
+                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-400">
+                <span class="flex-1 text-sm">${escapeHtml(FONTES_LABEL_CONFIG[fonte] || fonte)}</span>
+                <button type="button" data-action="mover-fonte" data-fonte="${fonte}" data-dir="-1" ${i === 0 ? 'disabled' : ''}
+                    aria-label="Mover ${escapeHtml(FONTES_LABEL[fonte])} para cima"
+                    class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none">
+                    <i aria-hidden="true" class="fa-solid fa-chevron-up text-xs"></i>
+                </button>
+                <button type="button" data-action="mover-fonte" data-fonte="${fonte}" data-dir="1" ${i === ordem.length - 1 ? 'disabled' : ''}
+                    aria-label="Mover ${escapeHtml(FONTES_LABEL[fonte])} para baixo"
+                    class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none">
+                    <i aria-hidden="true" class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+            </div>`).join('');
+    }
+
+    function wireFontesConfig(container) {
+        container.addEventListener('change', (e) => {
+            const chk = e.target.closest('[data-action="toggle-fonte"]');
+            if (chk) window.LogZenFilmes.setFonteHabilitada(chk.dataset.fonte, chk.checked);
+        });
+        container.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action="mover-fonte"]');
+            if (!btn) return;
+            const ordem = window.LogZenFilmes.getFontesOrdem();
+            const idx = ordem.indexOf(btn.dataset.fonte);
+            const novoIdx = idx + parseInt(btn.dataset.dir, 10);
+            if (idx === -1 || novoIdx < 0 || novoIdx >= ordem.length) return;
+            [ordem[idx], ordem[novoIdx]] = [ordem[novoIdx], ordem[idx]];
+            window.LogZenFilmes.setFontesOrdem(ordem);
+            container.innerHTML = renderFontesConfig();
+        });
     }
 
     function renderLocalCampos(r) {
@@ -270,7 +473,10 @@ window.LogZenFilmes = (function () {
 
     function renderPainelAdicionar() {
         if (rascunho) return renderRascunho();
-        const temChave = !!window.LogZenFilmes.getApiKey();
+        const habilitadas = window.LogZenFilmes.getFontesHabilitadas();
+        const algumaFonteAtiva = (habilitadas.tmdb && window.LogZenFilmes.getTmdbApiKey())
+            || (habilitadas.omdb && window.LogZenFilmes.getApiKey())
+            || habilitadas.tvmaze;
         return `
         <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 space-y-3">
             <button type="button" data-action="toggle-add-filme" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
@@ -283,9 +489,9 @@ window.LogZenFilmes = (function () {
                     <button type="submit" class="px-3 py-2 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700 shrink-0">Buscar</button>
                 </form>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                    ${temChave
-                        ? 'Busca por título via OMDb, ou cole um link do YouTube para trazer os dados direto de lá (sem precisar de chave).'
-                        : 'Sem chave da OMDb configurada a busca por título não funciona, mas colar um link do YouTube funciona igual. Configure sua chave em Configurações → Vídeos para também buscar por título, ou registre manualmente abaixo.'}
+                    ${algumaFonteAtiva
+                        ? 'Busca por título nas fontes habilitadas (Configurações → Vídeos), ou cole um link do YouTube para trazer os dados direto de lá (sem precisar de chave).'
+                        : 'Nenhuma fonte de busca habilitada/configurada — configure em Configurações → Vídeos, cole um link do YouTube (funciona sem chave), ou registre manualmente abaixo.'}
                 </p>
                 <p data-busca-status class="text-xs text-gray-500 dark:text-gray-400 hidden"></p>
                 <div data-resultados-busca class="space-y-2"></div>
@@ -369,20 +575,23 @@ window.LogZenFilmes = (function () {
 
             const selecionarBtn = e.target.closest('[data-action="selecionar-resultado"]');
             if (selecionarBtn) {
+                const resultados = rootEl.__ultimaBusca || [];
+                const item = resultados.find((r) => r.id === selecionarBtn.dataset.id);
+                if (!item) return;
                 const status = rootEl.querySelector('[data-busca-status]');
                 try {
                     if (status) { status.textContent = 'Carregando detalhes…'; status.classList.remove('hidden'); }
-                    const d = await window.LogZenFilmes.buscarDetalhes(selecionarBtn.dataset.imdbid);
+                    const d = await window.LogZenFilmes.buscarDetalhesPorResultado(item);
                     rascunho = {
                         manual: false,
-                        titulo: d.Title,
-                        tipo: d.Type || 'movie',
-                        imdbID: d.imdbID,
-                        poster: d.Poster && d.Poster !== 'N/A' ? d.Poster : '',
-                        ano: d.Year || '',
-                        tempo: d.Runtime && d.Runtime !== 'N/A' ? d.Runtime : '',
-                        genero: d.Genre && d.Genre !== 'N/A' ? d.Genre : '',
-                        premios: d.Awards && d.Awards !== 'N/A' ? d.Awards : '',
+                        titulo: d.titulo,
+                        tipo: d.tipo || 'movie',
+                        imdbID: d.imdbID || '',
+                        poster: d.poster || '',
+                        ano: d.ano || '',
+                        tempo: d.tempo || '',
+                        genero: d.genero || '',
+                        premios: d.premios || '',
                         assistidoEm: window.LogZenData.todayKey(),
                         estrelas: 0,
                         opiniao: '',
@@ -513,6 +722,7 @@ window.LogZenFilmes = (function () {
                 try {
                     if (status) { status.textContent = 'Buscando…'; status.classList.remove('hidden'); }
                     const resultados = await window.LogZenFilmes.buscarPorTitulo(query);
+                    rootEl.__ultimaBusca = resultados;
                     if (resultadosEl) resultadosEl.innerHTML = resultados.map(renderResultadoBusca).join('');
                     if (status) status.classList.add('hidden');
                 } catch (err) {
@@ -583,6 +793,21 @@ window.LogZenFilmes = (function () {
                 window.LogZenFilmes.setApiKey(apiKeyInput.value.trim());
                 render();
             });
+        }
+
+        const tmdbApiKeyInput = $('#tmdbApiKeyInput');
+        if (tmdbApiKeyInput) {
+            tmdbApiKeyInput.value = window.LogZenFilmes.getTmdbApiKey();
+            tmdbApiKeyInput.addEventListener('change', () => {
+                window.LogZenFilmes.setTmdbApiKey(tmdbApiKeyInput.value.trim());
+                render();
+            });
+        }
+
+        const fontesContainer = $('#fontesVideosLista');
+        if (fontesContainer) {
+            fontesContainer.innerHTML = renderFontesConfig();
+            wireFontesConfig(fontesContainer);
         }
     }
 
