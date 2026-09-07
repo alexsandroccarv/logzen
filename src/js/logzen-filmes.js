@@ -1,10 +1,14 @@
 /* ==========================================================================
-   LogZen — Filmes e séries (issue #11): registro do que foi assistido, com
-   busca de metadados (pôster, duração, prêmios) via OMDb API e avaliação
-   pessoal (estrelas + opinião). Site estático, sem backend — por isso a
-   chave da OMDb é a do PRÓPRIO usuário (colada em Configurações → Filmes,
-   guardada só no localStorage), nunca embutida no código publicado.
-   Sem chave configurada, o registro manual (sem busca) continua funcionando.
+   LogZen — Vídeos (issue #11): registro de filmes, séries, shows e
+   palestras assistidos, com busca de metadados (pôster, duração, prêmios)
+   via OMDb API e avaliação pessoal (estrelas + opinião). Site estático,
+   sem backend — por isso a chave da OMDb é a do PRÓPRIO usuário (colada em
+   Configurações → Vídeos, guardada só no localStorage), nunca embutida no
+   código publicado. Sem chave configurada, o registro manual (sem busca)
+   continua funcionando. Seção renomeada de "Filmes" para "Vídeos" (issue
+   #30) — nomes internos (módulo, ids, chaves de armazenamento) preservados
+   para não perder dados já salvos. Temporada, Episódio e Duração do
+   episódio só aparecem para o tipo Série (issue #30).
    ========================================================================== */
 window.LogZenFilmes = (function () {
     const ENTRIES_KEY = 'logzen:filmes:v1';
@@ -66,7 +70,7 @@ window.LogZenFilmes = (function () {
 
     async function buscarPorTitulo(query) {
         const key = getApiKey();
-        if (!key) throw new Error('Configure sua chave da OMDb API em Configurações → Filmes.');
+        if (!key) throw new Error('Configure sua chave da OMDb API em Configurações → Vídeos.');
         const resp = await fetch(`https://www.omdbapi.com/?apikey=${encodeURIComponent(key)}&s=${encodeURIComponent(query)}`);
         if (!resp.ok) throw new Error('Falha ao conectar com a OMDb API.');
         const dados = await resp.json();
@@ -76,7 +80,7 @@ window.LogZenFilmes = (function () {
 
     async function buscarDetalhes(imdbID) {
         const key = getApiKey();
-        if (!key) throw new Error('Configure sua chave da OMDb API em Configurações → Filmes.');
+        if (!key) throw new Error('Configure sua chave da OMDb API em Configurações → Vídeos.');
         const resp = await fetch(`https://www.omdbapi.com/?apikey=${encodeURIComponent(key)}&i=${encodeURIComponent(imdbID)}&plot=short`);
         if (!resp.ok) throw new Error('Falha ao conectar com a OMDb API.');
         const dados = await resp.json();
@@ -200,6 +204,11 @@ window.LogZenFilmes = (function () {
                 <input type="text" data-field="episodioTitulo" maxlength="120" value="${escapeHtml(r.episodioTitulo || '')}"
                     class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
             </div>
+            <div class="col-span-2">
+                <label class="block text-xs font-medium mb-1">Duração do episódio</label>
+                <input type="text" data-field="tempo" maxlength="30" placeholder="ex.: 42 min" value="${escapeHtml(r.tempo || '')}"
+                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            </div>
         </div>`;
     }
 
@@ -265,18 +274,18 @@ window.LogZenFilmes = (function () {
         return `
         <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 space-y-3">
             <button type="button" data-action="toggle-add-filme" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
-                <i aria-hidden="true" class="fa-solid fa-plus"></i> Registrar filme/série
+                <i aria-hidden="true" class="fa-solid fa-plus"></i> Registrar vídeo
             </button>
             <div data-add-filme-body hidden class="space-y-3">
                 <form data-form-busca class="flex items-center gap-2">
-                    <input type="text" data-field="busca" placeholder="Título do filme/série, ou cole um link do YouTube…"
+                    <input type="text" data-field="busca" placeholder="Título do filme/série/show, ou cole um link do YouTube…"
                         class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                     <button type="submit" class="px-3 py-2 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700 shrink-0">Buscar</button>
                 </form>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                     ${temChave
                         ? 'Busca por título via OMDb, ou cole um link do YouTube para trazer os dados direto de lá (sem precisar de chave).'
-                        : 'Sem chave da OMDb configurada a busca por título não funciona, mas colar um link do YouTube funciona igual. Configure sua chave em Configurações → Filmes para também buscar por título, ou registre manualmente abaixo.'}
+                        : 'Sem chave da OMDb configurada a busca por título não funciona, mas colar um link do YouTube funciona igual. Configure sua chave em Configurações → Vídeos para também buscar por título, ou registre manualmente abaixo.'}
                 </p>
                 <p data-busca-status class="text-xs text-gray-500 dark:text-gray-400 hidden"></p>
                 <div data-resultados-busca class="space-y-2"></div>
@@ -294,9 +303,9 @@ window.LogZenFilmes = (function () {
         const localTexto = e.local
             ? (LOCAL_LABEL[e.local] || e.local) + (e.local === 'streaming' && e.servico ? ` (${e.servico})` : '')
             : '';
-        const detalhes = [e.ano, e.tempo, e.genero, TIPO_LABEL[e.tipo] || e.tipo, localTexto].filter(Boolean).join(' · ');
+        const detalhes = [e.ano, e.tipo !== 'series' ? e.tempo : '', e.genero, TIPO_LABEL[e.tipo] || e.tipo, localTexto].filter(Boolean).join(' · ');
         const episodioTexto = e.tipo === 'series' && (e.temporada || e.episodio)
-            ? `T${e.temporada || '?'}E${e.episodio || '?'}${e.episodioTitulo ? ': ' + e.episodioTitulo : ''}`
+            ? `T${e.temporada || '?'}E${e.episodio || '?'}${e.episodioTitulo ? ': ' + e.episodioTitulo : ''}${e.tempo ? ' · ' + e.tempo : ''}`
             : '';
         const estrelas = Array.from({ length: 5 }, (_, i) => i + 1)
             .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-sm"></i>`).join('');
@@ -334,7 +343,7 @@ window.LogZenFilmes = (function () {
         const entradas = window.LogZenFilmes.listar();
         const listaHtml = entradas.length
             ? entradas.map(renderEntrada).join('')
-            : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhum filme/série registrado ainda.</p>';
+            : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhum vídeo registrado ainda.</p>';
         root.innerHTML = renderPainelAdicionar() + `<div data-filmes-lista class="space-y-3">${listaHtml}</div>`;
     }
 
@@ -538,6 +547,7 @@ window.LogZenFilmes = (function () {
                     rascunho.temporada = rascunhoForm.querySelector('[data-field="temporada"]').value.trim();
                     rascunho.episodio = rascunhoForm.querySelector('[data-field="episodio"]').value.trim();
                     rascunho.episodioTitulo = rascunhoForm.querySelector('[data-field="episodioTitulo"]').value.trim();
+                    rascunho.tempo = rascunhoForm.querySelector('[data-episodio-campos] [data-field="tempo"]').value.trim();
                 } else {
                     rascunho.temporada = '';
                     rascunho.episodio = '';
