@@ -8,6 +8,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Livros: botão "Editar" em cada registro, reabrindo o formulário
+  preenchido com os dados atuais (mesmo padrão de Entregas e
+  Filmes/séries) — salvar atualiza o mesmo registro, sem criar um
+  duplicado (issue #28).
 - Livros: campo opcional em Configurações → Livros para colar uma
   chave própria e gratuita da Google Books API (mesmo padrão da OMDb
   em Filmes: fica só no navegador, nunca embutida no código) — evita

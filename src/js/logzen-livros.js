@@ -10,7 +10,9 @@
    código detecta automaticamente qual é o caso. Os resultados das duas
    fontes são normalizados para o mesmo formato antes de exibir. Fallback de
    registro manual sempre disponível. Leitura tem início e fim (fim em
-   branco = ainda lendo).
+   branco = ainda lendo). Editar um livro já registrado (issue #28) reabre o
+   formulário preenchido com os dados atuais — salvar atualiza o mesmo
+   registro (mesmo `id`), sem criar um duplicado.
    ========================================================================== */
 window.LogZenLivros = (function () {
     const ENTRIES_KEY = 'logzen:livros:v1';
@@ -54,6 +56,18 @@ window.LogZenLivros = (function () {
 
     function remover(id) {
         writeEntries(readEntries().filter((e) => e.id !== id));
+    }
+
+    function obter(id) {
+        return readEntries().find((e) => e.id === id);
+    }
+
+    function atualizar(id, dados) {
+        const lista = readEntries();
+        const item = lista.find((e) => e.id === id);
+        if (!item) return;
+        Object.assign(item, dados);
+        writeEntries(lista);
     }
 
     function labelIdioma(codigo) {
@@ -161,7 +175,7 @@ window.LogZenLivros = (function () {
         }
     }
 
-    return { listar, salvar, remover, labelIdioma, buscarPorTitulo, getApiKey, setApiKey };
+    return { listar, salvar, remover, obter, atualizar, labelIdioma, buscarPorTitulo, getApiKey, setApiKey };
 })();
 
 (function () {
@@ -179,6 +193,9 @@ window.LogZenLivros = (function () {
     // Entrada em construção (resultado de busca escolhido, ou manual) antes
     // de ser salva — estado só em memória, não persiste até "Salvar".
     let rascunho = null;
+    // Id do livro em edição (issue #28), ou null quando o rascunho é um
+    // registro novo — controla se o submit chama salvar() ou atualizar().
+    let editandoId = null;
 
     function estrelasBtns(valorAtual) {
         return Array.from({ length: 5 }, (_, i) => i + 1).map((n) => `
@@ -269,7 +286,7 @@ window.LogZenLivros = (function () {
                     class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(rascunho.opiniao || '')}</textarea>
             </div>
             <div class="flex items-center gap-2">
-                <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Salvar</button>
+                <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">${editandoId ? 'Salvar alterações' : 'Salvar'}</button>
                 <button type="button" data-action="cancelar-rascunho" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
             </div>
         </form>`;
@@ -320,10 +337,16 @@ window.LogZenLivros = (function () {
                         <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)}</p>
                         ${periodo ? `<p class="text-xs font-medium text-brand-700 dark:text-accent-400 truncate">${escapeHtml(periodo)}</p>` : ''}
                     </div>
-                    <button type="button" data-action="remover-livro" aria-label="Remover ${escapeHtml(e.titulo)}"
-                        class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
-                        <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
-                    </button>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button type="button" data-action="editar-livro" aria-label="Editar ${escapeHtml(e.titulo)}"
+                            class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                            <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button type="button" data-action="remover-livro" aria-label="Remover ${escapeHtml(e.titulo)}"
+                            class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                            <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="mt-1">${estrelas}</div>
                 ${e.opiniao ? `<p class="text-sm mt-1">${escapeHtml(e.opiniao)}</p>` : ''}
@@ -384,6 +407,18 @@ window.LogZenLivros = (function () {
             const cancelarBtn = e.target.closest('[data-action="cancelar-rascunho"]');
             if (cancelarBtn) {
                 rascunho = null;
+                editandoId = null;
+                render();
+                return;
+            }
+
+            const editarBtn = e.target.closest('[data-action="editar-livro"]');
+            if (editarBtn) {
+                const card = editarBtn.closest('[data-livro-entrada]');
+                const entrada = window.LogZenLivros.obter(card.dataset.id);
+                if (!entrada) return;
+                rascunho = { ...entrada, manual: true };
+                editandoId = entrada.id;
                 render();
                 return;
             }
@@ -410,6 +445,7 @@ window.LogZenLivros = (function () {
                 const titulo = card.querySelector('p.font-semibold').textContent;
                 if (!window.confirm(`Remover "${titulo}" da lista?`)) return;
                 window.LogZenLivros.remover(card.dataset.id);
+                if (editandoId === card.dataset.id) { rascunho = null; editandoId = null; }
                 render();
                 return;
             }
@@ -466,9 +502,16 @@ window.LogZenLivros = (function () {
                 rascunho.dataInicio = rascunhoForm.querySelector('[data-field="dataInicio"]').value || '';
                 rascunho.dataFim = rascunhoForm.querySelector('[data-field="dataFim"]').value || '';
                 rascunho.opiniao = rascunhoForm.querySelector('[data-field="opiniao"]').value.trim();
-                const entrada = { ...rascunho, id: gerarId(), criadoEm: Date.now() };
+                const entrada = { ...rascunho };
                 delete entrada.manual;
-                window.LogZenLivros.salvar(entrada);
+                if (editandoId) {
+                    window.LogZenLivros.atualizar(editandoId, entrada);
+                    editandoId = null;
+                } else {
+                    entrada.id = gerarId();
+                    entrada.criadoEm = Date.now();
+                    window.LogZenLivros.salvar(entrada);
+                }
                 rascunho = null;
                 render();
             }
