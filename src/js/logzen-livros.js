@@ -13,7 +13,8 @@
    branco = ainda lendo). Editar um livro já registrado (issue #28) reabre o
    formulário preenchido com os dados atuais — salvar atualiza o mesmo
    registro (mesmo `id`), sem criar um duplicado. Formato (Analógico/Digital)
-   e Posse (Próprio/Emprestado), issue #29.
+   e Posse (Próprio/Emprestado), issue #29. Avaliação em 10 estrelas, em vez
+   de 5 (issue #32), mesma escala usada em Vídeos e Podcasts.
    ========================================================================== */
 window.LogZenLivros = (function () {
     const ENTRIES_KEY = 'logzen:livros:v1';
@@ -201,9 +202,9 @@ window.LogZenLivros = (function () {
     let editandoId = null;
 
     function estrelasBtns(valorAtual) {
-        return Array.from({ length: 5 }, (_, i) => i + 1).map((n) => `
-            <button type="button" data-action="estrela" data-n="${n}" aria-pressed="${n <= valorAtual}" aria-label="${n} de 5 estrelas"
-                class="text-2xl leading-none ${n <= valorAtual ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
+        return Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `
+            <button type="button" data-action="estrela" data-n="${n}" aria-pressed="${n <= valorAtual}" aria-label="${n} de 10 estrelas"
+                class="text-xl leading-none ${n <= valorAtual ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
                 <i aria-hidden="true" class="fa-solid fa-star"></i>
             </button>`).join('');
     }
@@ -297,7 +298,7 @@ window.LogZenLivros = (function () {
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Minhas estrelas</label>
-                <div class="flex gap-1" data-estrelas>${estrelasBtns(rascunho.estrelas)}</div>
+                <div class="flex flex-wrap gap-1" data-estrelas>${estrelasBtns(rascunho.estrelas)}</div>
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Minha opinião</label>
@@ -343,8 +344,8 @@ window.LogZenLivros = (function () {
         if (e.dataInicio && e.dataFim) periodo = `Lido de ${fmt(e.dataInicio)} a ${fmt(e.dataFim)}`;
         else if (e.dataInicio) periodo = `Lendo desde ${fmt(e.dataInicio)}`;
         else if (e.dataFim) periodo = `Concluído em ${fmt(e.dataFim)}`;
-        const estrelas = Array.from({ length: 5 }, (_, i) => i + 1)
-            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-sm"></i>`).join('');
+        const estrelas = Array.from({ length: 10 }, (_, i) => i + 1)
+            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-xs"></i>`).join('');
         return `
         <div data-livro-entrada data-id="${e.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex gap-3">
             ${capa}

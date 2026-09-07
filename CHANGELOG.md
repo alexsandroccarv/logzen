@@ -8,12 +8,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Changed
+- Avaliação pessoal em **10 estrelas** (era 5) em Vídeos, Livros e
+  Podcasts — valores já salvos (1-5) continuam válidos dentro da nova
+  escala (issue #32).
 - Renomeada a seção "Filmes" para **Vídeos** (aba, título e
   Configurações) — reflete melhor o conteúdo (filmes, séries, shows,
   palestras). Nomes internos preservados, sem impacto nos registros já
   salvos (issue #30).
 
 ### Added
+- Vídeos: ao registrar ou editar uma Série, mostra as
+  temporadas/episódios já registrados do mesmo título (ex.: "Já
+  registrados: T1E1, T1E2") — ajuda a lembrar o que já foi visto e
+  evitar duplicar (issue #32).
 - Vídeos: **TMDb** e **TVmaze** como novas fontes de busca, além da OMDb
   — TMDb (filmes e séries, chave própria gratuita, inclui runtime por
   episódio) e TVmaze (só séries, sem exigir chave nenhuma). Em
