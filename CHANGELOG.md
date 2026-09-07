@@ -7,7 +7,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Changed
+- Renomeada a seção "Filmes" para **Vídeos** (aba, título e
+  Configurações) — reflete melhor o conteúdo (filmes, séries, shows,
+  palestras). Nomes internos preservados, sem impacto nos registros já
+  salvos (issue #30).
+
 ### Added
+- Vídeos: campo de **duração do episódio**, editável e sempre exibido
+  junto ao identificador do episódio (ex.: "T1E2 · 42 min") — antes só
+  vinha do OMDb e não podia ser definida manualmente (issue #30).
 - Livros: campos **Formato** (Analógico/Digital) e **Posse**
   (Próprio/Emprestado) ao registrar ou editar um livro, exibidos junto
   aos demais detalhes do card (issue #29).
