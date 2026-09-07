@@ -12,7 +12,8 @@
    registro manual sempre disponível. Leitura tem início e fim (fim em
    branco = ainda lendo). Editar um livro já registrado (issue #28) reabre o
    formulário preenchido com os dados atuais — salvar atualiza o mesmo
-   registro (mesmo `id`), sem criar um duplicado.
+   registro (mesmo `id`), sem criar um duplicado. Formato (Analógico/Digital)
+   e Posse (Próprio/Emprestado), issue #29.
    ========================================================================== */
 window.LogZenLivros = (function () {
     const ENTRIES_KEY = 'logzen:livros:v1';
@@ -180,6 +181,8 @@ window.LogZenLivros = (function () {
 
 (function () {
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
+    const FORMATO_LABEL = { analogico: 'Analógico (papel)', digital: 'Digital' };
+    const POSSE_LABEL = { proprio: 'Próprio', emprestado: 'Emprestado' };
 
     function escapeHtml(s) {
         return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -263,6 +266,22 @@ window.LogZenLivros = (function () {
                     <input type="number" data-field="paginas" min="1" value="${escapeHtml(rascunho.paginas || '')}"
                         class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                 </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Formato</label>
+                    <select data-field="formato"
+                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        <option value="analogico" ${!rascunho.formato || rascunho.formato === 'analogico' ? 'selected' : ''}>Analógico (papel)</option>
+                        <option value="digital" ${rascunho.formato === 'digital' ? 'selected' : ''}>Digital</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Posse</label>
+                    <select data-field="posse"
+                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        <option value="proprio" ${!rascunho.posse || rascunho.posse === 'proprio' ? 'selected' : ''}>Próprio</option>
+                        <option value="emprestado" ${rascunho.posse === 'emprestado' ? 'selected' : ''}>Emprestado</option>
+                    </select>
+                </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -318,7 +337,7 @@ window.LogZenLivros = (function () {
         const capa = e.capa
             ? `<img src="${escapeHtml(e.capa)}" alt="" class="w-14 h-20 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
             : `<div class="w-14 h-20 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-book"></i></div>`;
-        const detalhes = [e.editora, e.idioma, e.paginas ? `${e.paginas} pág.` : ''].filter(Boolean).join(' · ');
+        const detalhes = [e.editora, e.idioma, e.paginas ? `${e.paginas} pág.` : '', FORMATO_LABEL[e.formato], POSSE_LABEL[e.posse]].filter(Boolean).join(' · ');
         const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
         let periodo = '';
         if (e.dataInicio && e.dataFim) periodo = `Lido de ${fmt(e.dataInicio)} a ${fmt(e.dataFim)}`;
@@ -376,6 +395,7 @@ window.LogZenLivros = (function () {
             if (manualBtn) {
                 rascunho = {
                     manual: true, titulo: '', autor: '', capa: '', editora: '', idioma: '', paginas: '',
+                    formato: 'analogico', posse: 'proprio',
                     dataInicio: window.LogZenData.todayKey(), dataFim: '', estrelas: 0, opiniao: '',
                 };
                 render();
@@ -395,6 +415,8 @@ window.LogZenLivros = (function () {
                     editora: item.editora,
                     idioma: item.idioma,
                     paginas: item.paginas,
+                    formato: 'analogico',
+                    posse: 'proprio',
                     dataInicio: window.LogZenData.todayKey(),
                     dataFim: '',
                     estrelas: 0,
@@ -499,6 +521,8 @@ window.LogZenLivros = (function () {
                 rascunho.editora = rascunhoForm.querySelector('[data-field="editora"]').value.trim();
                 rascunho.idioma = rascunhoForm.querySelector('[data-field="idioma"]').value.trim();
                 rascunho.paginas = rascunhoForm.querySelector('[data-field="paginas"]').value.trim();
+                rascunho.formato = rascunhoForm.querySelector('[data-field="formato"]').value;
+                rascunho.posse = rascunhoForm.querySelector('[data-field="posse"]').value;
                 rascunho.dataInicio = rascunhoForm.querySelector('[data-field="dataInicio"]').value || '';
                 rascunho.dataFim = rascunhoForm.querySelector('[data-field="dataFim"]').value || '';
                 rascunho.opiniao = rascunhoForm.querySelector('[data-field="opiniao"]').value.trim();

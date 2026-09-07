@@ -8,6 +8,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Added
+- Livros: campos **Formato** (Analógico/Digital) e **Posse**
+  (Próprio/Emprestado) ao registrar ou editar um livro, exibidos junto
+  aos demais detalhes do card (issue #29).
 - Livros: botão "Editar" em cada registro, reabrindo o formulário
   preenchido com os dados atuais (mesmo padrão de Entregas e
   Filmes/séries) — salvar atualiza o mesmo registro, sem criar um
