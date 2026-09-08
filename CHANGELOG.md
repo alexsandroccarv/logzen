@@ -14,6 +14,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   "Objetivos do dia" (issue #34).
 
 ### Changed
+- Tela "Hoje": o cartão "Objetivos do dia" não tem mais um campo para
+  digitar um objetivo novo direto ali — a entrada passa a ser sempre via
+  Backlog → "Enviar para hoje" (issue #40). Em compensação, um objetivo
+  já existente pode ser editado no lugar (ícone de lápis), sem afetar
+  prioridade, nota ou estado de concluído (issue #41).
+- Metas: o texto de progresso de itens "contador-inverso" (ex.: "ficar
+  30 dias sem beber") agora deixa explícito o nome do item ("30 dias
+  seguidos sem 'Álcool'"), em vez de só "30 dias seguidos" (issue #39).
 - Backlog: tela mais larga no desktop e lista de tarefas (pendentes e
   arquivo "Enviadas") em quadro de colunas — 1 no celular, 2 no notebook,
   3 em telas largas, cada grupo de projeto sem quebrar entre colunas —
@@ -44,6 +52,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   salvos (issue #30).
 
 ### Added
+- Nova opção em Configurações → Virada do dia: "Meu dia não acaba à
+  meia-noite" — quando ativa, o novo dia só começa às 3h da manhã
+  (registros feitos entre meia-noite e 3h contam para o dia anterior),
+  para quem dorme tarde. Desligada por padrão (issue #38).
 - **Metas de ocorrência** para itens do tipo "checkbox": valor-alvo +
   período (semana ou mês), ex.: "yoga 2x por semana". O progresso conta
   quantos dias dentro da semana (segunda a domingo) ou mês corrente o

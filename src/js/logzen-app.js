@@ -13,9 +13,18 @@
    logo abaixo dos Objetivos (issue #34); "Como foi meu dia" fecha a tela.
    Metas são definidas/editadas em Itens rastreados — a tela "Hoje" só
    mostra o progresso: valor-alvo + prazo para contador (recorde) e
-   contador-inverso (streak — issue #33), ou valor-alvo + período
-   (semana/mês) para checkbox (ocorrência, ex.: "yoga 2x por semana" —
-   issue #35).
+   contador-inverso (streak — "dias seguidos sem o hábito", ex.: "30 dias
+   sem beber" — issue #33/#39), ou valor-alvo + período (semana/mês) para
+   checkbox (ocorrência, ex.: "yoga 2x por semana" — issue #35).
+
+   "Objetivos do dia" (issue #41): entrada só via Backlog → "Enviar para
+   hoje" — a tela "Hoje" não tem mais campo para digitar um objetivo novo
+   (issue #40); dá para editar o texto de um já existente (ícone de lápis)
+   sem afetar prioridade/nota/estado de concluído.
+
+   Virada do dia (issue #38): por padrão o dia troca à meia-noite; com a
+   opção em Configurações, troca só às 3h da manhã (LogZenData.todayKey()
+   sem argumento já aplica isso — ver agoraEfetivo() em logzen-data.js).
    ========================================================================== */
 (function () {
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
@@ -73,7 +82,7 @@
                 ? `Meta batida: ${p.alvo}x por ${periodo}`
                 : `Meta: ${p.atual} de ${p.alvo}x essa ${periodo}`;
         } else {
-            const unidade = p.tipo === 'streak' ? ' dias seguidos' : '';
+            const unidade = p.tipo === 'streak' ? ` dias seguidos sem "${item.nome}"` : '';
             texto = p.bateu
                 ? `Meta batida: ${p.alvo}${unidade}`
                 : `Meta: ${p.atual} de ${p.alvo}${unidade}${p.prazo ? ` · até ${formatarPrazo(p.prazo)}` : ''}`;
@@ -414,6 +423,9 @@
                     <span class="truncate ${o.feito ? 'line-through text-ink-300' : ''}">${escapeHtml(o.texto)}</span>
                 </label>
                 ${notaBtnObjetivo(o, temNota)}
+                <button type="button" data-action="editar-objetivo" aria-label="Editar objetivo" class="w-7 h-7 shrink-0 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
+                    <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
+                </button>
                 <button type="button" data-action="remove-objetivo" aria-label="Remover objetivo" class="w-7 h-7 shrink-0 rounded-full text-ink-300 hover:text-clay-600 hover:bg-clay-50 dark:hover:bg-clay-900/40 flex items-center justify-center">
                     <i aria-hidden="true" class="fa-solid fa-xmark text-xs"></i>
                 </button>
@@ -436,7 +448,10 @@
 
     // Sempre em destaque (issue #33): cartão fixo, não mais um <details>
     // recolhível — é a primeira coisa da tela, junto das Metas (renderMetas,
-    // ver render()). Em telas largas, a lista ganha 2 colunas internas.
+    // ver render()). Em telas largas, a lista ganha 2 colunas internas. Sem
+    // formulário de adicionar (issue #40) — a entrada é sempre via Backlog
+    // → "Enviar para hoje"; cada objetivo ativo pode ser editado no lugar
+    // (issue #41, ver o botão "editar-objetivo" em renderObjetivoItem).
     function renderObjetivos(dateKey) {
         const lista = window.LogZenData.getObjetivos(dateKey);
         const temAtivos = lista.some((o) => !o.migrado);
@@ -453,15 +468,8 @@
                 <span data-objetivos-contador class="text-xs font-normal text-ink-300 ml-auto tabular-nums">${lista.length}/${limite}</span>
             </div>
             <ul data-objetivos-lista class="space-y-2 lg:columns-2 lg:gap-x-4">${renderListaObjetivos(lista, dateKey)}</ul>
-            <p data-objetivos-vazio class="text-xs text-ink-400 mt-2 ${temAtivos ? 'hidden' : ''}">Nenhum objetivo ainda — adicione um abaixo, ou envie do Backlog.</p>
-            <p data-objetivos-limite class="text-xs text-clay-700 dark:text-clay-400 mt-2 ${atingiuLimite ? '' : 'hidden'}">Limite de ${limite} objetivos atingido — conclua ou remova algum para adicionar outro.</p>
-            <form data-add-objetivo-form class="flex items-center gap-2 pt-3" ${atingiuLimite ? 'hidden' : ''}>
-                <input type="text" data-field="texto" placeholder="Adicionar objetivo…" maxlength="140"
-                    class="flex-1 px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
-                <button type="submit" aria-label="Adicionar objetivo" class="w-9 h-9 shrink-0 rounded-full bg-sage-600 dark:bg-sage-700 text-white flex items-center justify-center">
-                    <i aria-hidden="true" class="fa-solid fa-plus"></i>
-                </button>
-            </form>
+            <p data-objetivos-vazio class="text-xs text-ink-400 mt-2 ${temAtivos ? 'hidden' : ''}">Nenhum objetivo ainda — envie um do Backlog.</p>
+            <p data-objetivos-limite class="text-xs text-clay-700 dark:text-clay-400 mt-2 ${atingiuLimite ? '' : 'hidden'}">Limite de ${limite} objetivos atingido — conclua ou remova algum antes de enviar outro do Backlog.</p>
         </div>`;
     }
 
@@ -477,7 +485,7 @@
             sufixo = `de ${p.alvo}x por ${periodo}`;
             rodape = p.bateu ? 'Editável em Itens rastreados' : `renova toda ${periodo}`;
         } else {
-            const unidade = p.tipo === 'streak' ? ' dias seguidos' : '';
+            const unidade = p.tipo === 'streak' ? ` dias seguidos sem "${escapeHtml(item.nome)}"` : '';
             sufixo = `de ${p.alvo}${unidade}`;
             rodape = p.bateu ? 'Editável em Itens rastreados' : (p.prazo ? `até ${formatarPrazo(p.prazo)}` : 'sem prazo definido');
         }
@@ -531,12 +539,6 @@
         const atingiuLimite = lista.length >= limite;
         const msg = details.querySelector('[data-objetivos-limite]');
         if (msg) msg.classList.toggle('hidden', !atingiuLimite);
-        const form = details.querySelector('form[data-add-objetivo-form]');
-        if (form) form.hidden = atingiuLimite;
-    }
-
-    function gerarIdObjetivo() {
-        return `o${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     }
 
     // Objetivos (esquerda, mais larga) + Metas (direita, empilhadas) em
@@ -699,6 +701,48 @@
                 return;
             }
 
+            // Editar o texto de um objetivo direto na tela "Hoje" (issue #41):
+            // troca o <span> por um <input> no lugar — sem afetar prioridade,
+            // nota ou estado de concluído. Confirma ao apertar Enter ou
+            // perder o foco (clicar fora); Esc cancela sem salvar.
+            const editarObjetivoBtn = e.target.closest('[data-action="editar-objetivo"]');
+            if (editarObjetivoBtn) {
+                const li = editarObjetivoBtn.closest('[data-objetivo-item]');
+                if (li.querySelector('[data-objetivo-edit-input]')) return; // já editando
+                const span = li.querySelector('label span');
+                const original = span.textContent;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 140;
+                input.value = original;
+                input.dataset.objetivoEditInput = '';
+                input.setAttribute('aria-label', 'Editar texto do objetivo');
+                input.className = 'flex-1 min-w-0 px-2 py-1 rounded-lg border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400';
+                let cancelado = false;
+                input.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+                    else if (ev.key === 'Escape') { ev.preventDefault(); cancelado = true; input.blur(); }
+                });
+                input.addEventListener('blur', () => {
+                    const novoTexto = input.value.trim();
+                    const spanNovo = document.createElement('span');
+                    spanNovo.className = span.className;
+                    if (!cancelado && novoTexto && novoTexto !== original) {
+                        const lista = window.LogZenData.getObjetivos(dataAtual);
+                        const o = lista.find((x) => x.id === li.dataset.id);
+                        if (o) { o.texto = novoTexto; window.LogZenData.setObjetivos(dataAtual, lista); }
+                        spanNovo.textContent = novoTexto;
+                    } else {
+                        spanNovo.textContent = original;
+                    }
+                    input.replaceWith(spanNovo);
+                }, { once: true });
+                span.replaceWith(input);
+                input.focus();
+                input.select();
+                return;
+            }
+
             const row = e.target.closest('[data-row]');
             if (!row) return;
             const { cat, item, tipo } = row.dataset;
@@ -798,32 +842,6 @@
                 if (!row) return;
                 salvarNotaItemDebounced(e.target, dataAtual, row.dataset.cat, row.dataset.item);
             }
-        });
-
-        root.addEventListener('submit', (e) => {
-            const form = e.target.closest('form[data-add-objetivo-form]');
-            if (!form) return;
-            e.preventDefault();
-            const limite = window.LogZenData.LIMITE_OBJETIVOS_DIA;
-            const lista = window.LogZenData.getObjetivos(dataAtual);
-            if (lista.length >= limite) {
-                window.alert(`Objetivos do dia já tem o máximo de ${limite} itens — conclua ou remova algum antes de adicionar outro.`);
-                return;
-            }
-            const input = form.querySelector('[data-field="texto"]');
-            const texto = input.value.trim();
-            if (!texto) return;
-            const novo = { id: gerarIdObjetivo(), texto, feito: false };
-            const indiceAtivos = lista.filter((o) => !o.migrado).length;
-            lista.push(novo);
-            window.LogZenData.setObjetivos(dataAtual, lista);
-            const container = form.parentElement;
-            container.querySelector('[data-objetivos-lista]').insertAdjacentHTML('beforeend', renderObjetivoItem(novo, indiceAtivos, dataAtual));
-            const vazio = container.querySelector('[data-objetivos-vazio]');
-            if (vazio) vazio.classList.add('hidden');
-            atualizarContadorObjetivos(root, dataAtual);
-            input.value = '';
-            input.focus();
         });
     }
 
@@ -1286,6 +1304,18 @@
         if (btnProximo) btnProximo.addEventListener('click', () => irParaDia(1));
         const btnVoltar = $('#hojeVoltarHoje');
         if (btnVoltar) btnVoltar.addEventListener('click', irParaHoje);
+
+        // Virada do dia na madrugada (issue #38): ao ligar/desligar, "hoje"
+        // pode mudar na hora (ex.: 1h da manhã vira o dia anterior) — refaz
+        // a tela para refletir imediatamente.
+        const corteMadrugadaInput = $('#corteMadrugadaInput');
+        if (corteMadrugadaInput) {
+            corteMadrugadaInput.checked = window.LogZenData.getCorteMadrugada();
+            corteMadrugadaInput.addEventListener('change', () => {
+                window.LogZenData.setCorteMadrugada(corteMadrugadaInput.checked);
+                irParaHoje();
+            });
+        }
 
         itensConfigRootEl = $('#itensConfigRoot');
         if (itensConfigRootEl) {

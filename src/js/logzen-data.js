@@ -12,8 +12,38 @@ window.LogZenData = (function () {
     // migração automática abaixo, para nunca passar disso.
     const LIMITE_OBJETIVOS_DIA = 10;
 
+    // Virada do dia na madrugada, não à meia-noite (issue #38) — para quem
+    // dorme tarde: com a opção ativa, registros feitos entre meia-noite e
+    // 3h da manhã ainda contam para o dia anterior. Configurável em
+    // Configurações; desligada por padrão (comportamento de calendário).
+    const CORTE_MADRUGADA_KEY = 'logzen:corte-dia-madrugada:v1';
+    const HORA_CORTE_MADRUGADA = 3;
+
+    function getCorteMadrugada() {
+        try { return localStorage.getItem(CORTE_MADRUGADA_KEY) === '1'; }
+        catch (e) { return false; }
+    }
+
+    function setCorteMadrugada(ativo) {
+        try {
+            if (ativo) localStorage.setItem(CORTE_MADRUGADA_KEY, '1');
+            else localStorage.removeItem(CORTE_MADRUGADA_KEY);
+        } catch (e) { /* storage indisponível — segue sem persistir */ }
+    }
+
+    // "Agora", mas se a virada de madrugada estiver ativa e ainda não passou
+    // das 3h, devolve ainda o dia anterior — só usado quando `todayKey` é
+    // chamado sem data explícita (ou seja, para descobrir "hoje").
+    function agoraEfetivo() {
+        const agora = new Date();
+        if (getCorteMadrugada() && agora.getHours() < HORA_CORTE_MADRUGADA) {
+            agora.setDate(agora.getDate() - 1);
+        }
+        return agora;
+    }
+
     function todayKey(d) {
-        const date = d || new Date();
+        const date = d || agoraEfetivo();
         const pad = (n) => String(n).padStart(2, '0');
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     }
@@ -64,7 +94,7 @@ window.LogZenData = (function () {
     function streakZerado(categoriaId, itemId, upToDateKey) {
         const all = readAll();
         let streak = 0;
-        const cursor = upToDateKey ? new Date(upToDateKey + 'T00:00:00') : new Date();
+        const cursor = upToDateKey ? new Date(upToDateKey + 'T00:00:00') : agoraEfetivo();
         for (let i = 0; i < 3650; i++) {
             const key = todayKey(cursor);
             const entry = all[key];
@@ -224,6 +254,7 @@ window.LogZenData = (function () {
         getItemNota, setItemNota, getObjetivos, setObjetivos,
         getObjetivoNota, setObjetivoNota, migrarObjetivosPendentes,
         getNota, setNota, exportJSON, importJSON,
+        getCorteMadrugada, setCorteMadrugada,
         LIMITE_OBJETIVOS_DIA,
     };
 })();
