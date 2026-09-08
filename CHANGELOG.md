@@ -14,6 +14,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   "Objetivos do dia" (issue #34).
 
 ### Changed
+- Backlog: tela mais larga no desktop e lista de tarefas (pendentes e
+  arquivo "Enviadas") em quadro de colunas — 1 no celular, 2 no notebook,
+  3 em telas largas, cada grupo de projeto sem quebrar entre colunas —
+  mesmo tratamento de espaço já usado na tela "Hoje". O formulário de
+  adicionar tarefa mantém largura normal mesmo com a tela mais larga
+  (issue #37).
 - Identidade visual **"Sereno"** estendida para Backlog, Entregas, Vídeos,
   Livros, Podcasts e Configurações (antes só na tela "Hoje"): cartões
   arredondados com sombra suave em vez de borda cinza dura, fundo papel,

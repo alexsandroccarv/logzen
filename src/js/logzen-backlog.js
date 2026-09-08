@@ -146,7 +146,7 @@ window.LogZenBacklog = (function () {
                    <i aria-hidden="true" class="fa-solid fa-plus"></i> Adicionar tarefa
                </button>`;
         return `
-        <div class="rounded-2xl border border-dashed border-paper-300 dark:border-paper-700 p-4 space-y-3">
+        <div class="rounded-2xl border border-dashed border-paper-300 dark:border-paper-700 p-4 space-y-3 lg:max-w-2xl">
             ${cabecalho}
             <form data-form-backlog ${editando ? '' : 'hidden'} class="space-y-3">
                 ${renderCampoProjeto(v)}
@@ -259,14 +259,21 @@ window.LogZenBacklog = (function () {
         return ordenado;
     }
 
+    // Quadro em colunas no desktop (1 no celular, 2 no notebook, 3 em telas
+    // largas), mesmo tratamento da tela "Hoje" — evita que a lista fique
+    // muito comprida quando há vários projetos. Cada grupo de projeto é a
+    // unidade que não pode ser quebrada entre colunas ([break-inside:avoid]);
+    // sem card por trás do grupo (só o rótulo), já que cada tarefa já é seu
+    // próprio cartão — evita "cartão dentro de cartão" da mesma cor.
     function renderListaAgrupada(lista, renderItemFn) {
-        return agruparPorProjeto(lista).map((g) => `
-            <div data-grupo-projeto="${escapeHtml(g.projeto)}">
+        const grupos = agruparPorProjeto(lista).map((g) => `
+            <div data-grupo-projeto="${escapeHtml(g.projeto)}" class="[break-inside:avoid] mb-4">
                 <p class="text-xs font-medium text-ink-400 mb-2 flex items-center gap-1.5">
                     <i aria-hidden="true" class="fa-solid fa-folder"></i> ${g.projeto ? escapeHtml(g.projeto) : 'Sem projeto'}
                 </p>
-                <div class="space-y-3 mb-3">${g.tarefas.map(renderItemFn).join('')}</div>
+                <div class="space-y-3">${g.tarefas.map(renderItemFn).join('')}</div>
             </div>`).join('');
+        return `<div class="columns-1 lg:columns-2 xl:columns-3 gap-4">${grupos}</div>`;
     }
 
     function render() {
