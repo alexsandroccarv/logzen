@@ -18,6 +18,11 @@
      - TVmaze: só séries, sem exigir chave nenhuma.
    Fonte desabilitada ou sem chave configurada (quando exigida) é pulada
    silenciosamente na cadeia, sem gerar erro.
+
+   Avaliação em 10 estrelas, em vez de 5 (issue #32), mesma escala usada em
+   Livros e Podcasts. Ao registrar/editar uma série, mostra as
+   temporadas/episódios já registrados do mesmo título — ajuda a lembrar o
+   que já foi visto e evitar duplicar (issue #32).
    ========================================================================== */
 window.LogZenFilmes = (function () {
     const ENTRIES_KEY = 'logzen:filmes:v1';
@@ -59,6 +64,22 @@ window.LogZenFilmes = (function () {
 
     function obter(id) {
         return readEntries().find((e) => e.id === id);
+    }
+
+    // Temporadas/episódios já registrados para o mesmo título de série
+    // (issue #32) — casa por título (sem diferenciar maiúsculas/minúsculas),
+    // já que as 3 fontes de busca nem sempre compartilham um id em comum.
+    // Exclui a própria entrada quando editando, para não listar a si mesma.
+    function listarEpisodios(titulo, excluirId) {
+        const alvo = String(titulo || '').trim().toLowerCase();
+        if (!alvo) return [];
+        return readEntries()
+            .filter((e) => e.tipo === 'series' && e.id !== excluirId
+                && String(e.titulo || '').trim().toLowerCase() === alvo
+                && (e.temporada || e.episodio))
+            .map((e) => ({ temporada: e.temporada, episodio: e.episodio, episodioTitulo: e.episodioTitulo }))
+            .sort((a, b) => (parseInt(a.temporada, 10) || 0) - (parseInt(b.temporada, 10) || 0)
+                || (parseInt(a.episodio, 10) || 0) - (parseInt(b.episodio, 10) || 0));
     }
 
     function atualizar(id, dados) {
@@ -267,7 +288,7 @@ window.LogZenFilmes = (function () {
     }
 
     return {
-        listar, salvar, remover, obter, atualizar, getApiKey, setApiKey,
+        listar, salvar, remover, obter, atualizar, listarEpisodios, getApiKey, setApiKey,
         getTmdbApiKey, setTmdbApiKey, getFontesOrdem, setFontesOrdem,
         getFontesHabilitadas, setFonteHabilitada,
         buscarPorTitulo, buscarDetalhesPorResultado, extrairYoutubeId, buscarYoutube,
@@ -298,9 +319,9 @@ window.LogZenFilmes = (function () {
     let editandoId = null;
 
     function estrelasBtns(valorAtual) {
-        return Array.from({ length: 5 }, (_, i) => i + 1).map((n) => `
-            <button type="button" data-action="estrela" data-n="${n}" aria-pressed="${n <= valorAtual}" aria-label="${n} de 5 estrelas"
-                class="text-2xl leading-none ${n <= valorAtual ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
+        return Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `
+            <button type="button" data-action="estrela" data-n="${n}" aria-pressed="${n <= valorAtual}" aria-label="${n} de 10 estrelas"
+                class="text-xl leading-none ${n <= valorAtual ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
                 <i aria-hidden="true" class="fa-solid fa-star"></i>
             </button>`).join('');
     }
@@ -388,10 +409,22 @@ window.LogZenFilmes = (function () {
         </div>`;
     }
 
+    // Texto (sem a tag <p>) da lista de episódios já registrados do mesmo
+    // título — usado tanto no render inicial quanto na atualização pontual
+    // ao editar o título (sem precisar re-renderizar o formulário inteiro,
+    // o que perderia campos ainda não persistidos em `rascunho`).
+    function textoEpisodiosExistentes(titulo) {
+        const existentes = window.LogZenFilmes.listarEpisodios(titulo, editandoId);
+        if (!existentes.length) return '';
+        return `<i aria-hidden="true" class="fa-solid fa-list-ol mr-1"></i>Já registrados: ${existentes.map((ep) => escapeHtml(`T${ep.temporada || '?'}E${ep.episodio || '?'}`)).join(', ')}`;
+    }
+
     function renderEpisodioCampos(r) {
         const hidden = r.tipo !== 'series' ? 'hidden' : '';
+        const textoExistentes = textoEpisodiosExistentes(r.titulo);
         return `
         <div data-episodio-campos ${hidden} class="grid grid-cols-2 gap-3">
+            <p data-episodios-existentes class="col-span-2 text-xs text-gray-500 dark:text-gray-400" ${textoExistentes ? '' : 'hidden'}>${textoExistentes}</p>
             <div>
                 <label class="block text-xs font-medium mb-1">Temporada</label>
                 <input type="number" data-field="temporada" min="1" value="${escapeHtml(r.temporada || '')}"
@@ -457,7 +490,7 @@ window.LogZenFilmes = (function () {
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Minhas estrelas</label>
-                <div class="flex gap-1" data-estrelas>${estrelasBtns(rascunho.estrelas)}</div>
+                <div class="flex flex-wrap gap-1" data-estrelas>${estrelasBtns(rascunho.estrelas)}</div>
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Minha opinião</label>
@@ -513,8 +546,8 @@ window.LogZenFilmes = (function () {
         const episodioTexto = e.tipo === 'series' && (e.temporada || e.episodio)
             ? `T${e.temporada || '?'}E${e.episodio || '?'}${e.episodioTitulo ? ': ' + e.episodioTitulo : ''}${e.tempo ? ' · ' + e.tempo : ''}`
             : '';
-        const estrelas = Array.from({ length: 5 }, (_, i) => i + 1)
-            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-sm"></i>`).join('');
+        const estrelas = Array.from({ length: 10 }, (_, i) => i + 1)
+            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-xs"></i>`).join('');
         const dataFmt = new Date(e.assistidoEm + 'T00:00:00').toLocaleDateString('pt-BR');
         return `
         <div data-filme-entrada data-id="${e.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex gap-3">
@@ -678,6 +711,22 @@ window.LogZenFilmes = (function () {
             if (tipoSelect) {
                 const campos = tipoSelect.closest('form').querySelector('[data-episodio-campos]');
                 if (campos) campos.hidden = tipoSelect.value !== 'series';
+                return;
+            }
+            // Recalcula "já registrados" (issue #32) ao mudar o título de uma
+            // entrada manual de série — atualização pontual do parágrafo, em
+            // vez de um render() completo, que perderia tipo/temporada/
+            // episódio ainda não persistidos em `rascunho` (só gravados no
+            // submit).
+            const tituloInput = e.target.closest('[data-field="titulo"]');
+            if (tituloInput && rascunho) {
+                rascunho.titulo = tituloInput.value;
+                const painel = tituloInput.closest('form').querySelector('[data-episodios-existentes]');
+                if (painel) {
+                    const texto = textoEpisodiosExistentes(rascunho.titulo);
+                    painel.innerHTML = texto;
+                    painel.hidden = !texto;
+                }
             }
         });
 

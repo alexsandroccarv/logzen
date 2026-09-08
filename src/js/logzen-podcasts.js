@@ -5,6 +5,8 @@
    apresentador, categoria e link. Cadastro manual sempre disponível.
    Remover uma assinatura não apaga os episódios já registrados: cada
    episódio guarda o nome do podcast como snapshot, independente do id.
+   Avaliação em 10 estrelas, em vez de 5 (issue #32), mesma escala usada em
+   Vídeos e Livros.
    ========================================================================== */
 window.LogZenPodcasts = (function () {
     const PODCASTS_KEY = 'logzen:podcasts:v1';
@@ -119,9 +121,9 @@ window.LogZenPodcasts = (function () {
     let editandoEpisodioId = null;
 
     function estrelasBtns(valorAtual) {
-        return Array.from({ length: 5 }, (_, i) => i + 1).map((n) => `
-            <button type="button" data-action="estrela" data-n="${n}" aria-pressed="${n <= valorAtual}" aria-label="${n} de 5 estrelas"
-                class="text-2xl leading-none ${n <= valorAtual ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
+        return Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `
+            <button type="button" data-action="estrela" data-n="${n}" aria-pressed="${n <= valorAtual}" aria-label="${n} de 10 estrelas"
+                class="text-xl leading-none ${n <= valorAtual ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
                 <i aria-hidden="true" class="fa-solid fa-star"></i>
             </button>`).join('');
     }
@@ -283,7 +285,7 @@ window.LogZenPodcasts = (function () {
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Minhas estrelas</label>
-                    <div class="flex gap-1" data-estrelas data-valor="${v.estrelas || 0}">${estrelasBtns(v.estrelas)}</div>
+                    <div class="flex flex-wrap gap-1" data-estrelas data-valor="${v.estrelas || 0}">${estrelasBtns(v.estrelas)}</div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Minha opinião</label>
@@ -299,8 +301,8 @@ window.LogZenPodcasts = (function () {
     }
 
     function renderEpisodioCard(e) {
-        const estrelas = Array.from({ length: 5 }, (_, i) => i + 1)
-            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-sm"></i>`).join('');
+        const estrelas = Array.from({ length: 10 }, (_, i) => i + 1)
+            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-xs"></i>`).join('');
         const detalhes = [e.duracao, dataValida(e.dataOuvido) ? `ouvido em ${fmtData(e.dataOuvido)}` : ''].filter(Boolean).join(' · ');
         return `
         <div data-episodio-card data-id="${e.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
