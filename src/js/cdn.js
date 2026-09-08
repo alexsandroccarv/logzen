@@ -73,12 +73,25 @@
         darkMode: 'class',
         theme: {
             extend: {
-                fontFamily: { sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'] },
+                fontFamily: {
+                    sans: ['Karla', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    // Serifa suave para títulos da tela "Hoje" (issue #33) — dá
+                    // o toque "sereno" sem depender de negrito para hierarquia.
+                    display: ['Fraunces', 'Georgia', 'serif'],
+                },
                 colors: {
                     // Cor primária da marca (cabeçalho/rodapé).
                     brand:  { 50: '#e7f4f3', 100: '#cfeae7', 400: '#62b9b2', 600: '#0d9488', 700: '#0b7e74', 800: '#09685f', 900: '#07514b' },
                     // Cor de destaque (usada em detalhes no tema escuro).
                     accent: { 50: '#f0fdf4', 100: '#dcfce7', 400: '#4ade80', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' },
+                    // Paleta "sereno" da tela Hoje (issue #33): sálvia (ação
+                    // principal/calma), argila (atenção suave) e anil (info) —
+                    // em vez do semáforo vermelho/amarelo/verde de alarme.
+                    sage: { 50: '#eef2ec', 100: '#e4ebe0', 200: '#cfdccb', 300: '#b9cdb9', 400: '#8fb596', 600: '#5f8467', 700: '#3f6349', 800: '#2b3a2c', 900: '#202a20' },
+                    clay: { 50: '#f8ece5', 100: '#f3e2d8', 200: '#e8c9b7', 400: '#e0987a', 600: '#c07454', 700: '#9c5a40', 900: '#3a2e27' },
+                    anil: { 100: '#e2e8ee', 400: '#8fb0ce', 600: '#5c7996', 900: '#242c33' },
+                    paper: { 50: '#fbfaf6', 100: '#f4f5f0', 200: '#eceee6', 300: '#dedcd0', 700: '#262d25', 800: '#1c211d', 900: '#171b18' },
+                    ink: { 50: '#e8e9e0', 300: '#a8ab9d', 400: '#767a6c', 900: '#33362e' },
                 }
             }
         }

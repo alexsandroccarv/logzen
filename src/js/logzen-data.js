@@ -2,6 +2,8 @@
    LogZen — Camada de dados (armazenamento 100% local, sem backend — ver
    issue #1). Guarda um registro por dia (chave YYYY-MM-DD) em localStorage,
    namespaced para não colidir com as chaves do chrome.js/layout.js.
+   getMelhorValor (issue #33) sustenta as metas de itens "contador": o maior
+   valor já registrado em qualquer dia, para bater recordes.
    ========================================================================== */
 window.LogZenData = (function () {
     const STORAGE_KEY = 'logzen:entries:v1';
@@ -72,6 +74,20 @@ window.LogZenData = (function () {
             cursor.setDate(cursor.getDate() - 1);
         }
         return streak;
+    }
+
+    // Maior valor já registrado para um item "contador", em qualquer dia —
+    // usado pelas metas (issue #33): o alvo é bater um recorde (ex.: "60
+    // abdominais"), não repetir o mesmo valor todo dia.
+    function getMelhorValor(categoriaId, itemId) {
+        const all = readAll();
+        let melhor = 0;
+        Object.keys(all).forEach((dateKey) => {
+            const entry = all[dateKey];
+            const v = entry && entry[categoriaId] ? entry[categoriaId][itemId] : undefined;
+            if (typeof v === 'number' && v > melhor) melhor = v;
+        });
+        return melhor;
     }
 
     function getItemNota(dateKey, categoriaId, itemId) {
@@ -173,7 +189,7 @@ window.LogZenData = (function () {
     }
 
     return {
-        todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado,
+        todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado, getMelhorValor,
         getItemNota, setItemNota, getObjetivos, setObjetivos,
         getObjetivoNota, setObjetivoNota, migrarObjetivosPendentes,
         getNota, setNota, exportJSON, importJSON,

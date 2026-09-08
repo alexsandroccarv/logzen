@@ -28,6 +28,11 @@
     <!-- Estilos da aplicação (local — carrega sempre, mesmo offline) -->
     <link rel="stylesheet" href="css/styles.css">
 
+    <!-- Fraunces (títulos) + Karla (interface) — identidade "sereno" da tela
+         Hoje (issue #33). Sem tema alternativo escolhido, é a fonte padrão. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Karla:wght@400;500;600;700&display=swap">
+
     <!-- Tema claro/escuro e alto contraste: aplicar cedo para evitar "flash" -->
     <script>
         (function () {
@@ -52,7 +57,7 @@
          tolerante a falha, compartilhado com as páginas de apoio. -->
     <script src="js/cdn.js"></script>
 </head>
-<body class="font-sans bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-300">
+<body class="font-sans bg-paper-100 dark:bg-paper-800 text-ink-900 dark:text-ink-50 min-h-screen flex flex-col transition-colors duration-300">
 
     <!-- ============================ CABEÇALHO ============================ -->
     <header class="bg-brand-600 dark:bg-gray-900 border-b border-brand-700 dark:border-gray-700 flex flex-col shadow-sm dark:shadow-lg z-20 shrink-0 transition-colors duration-300">
@@ -111,27 +116,27 @@
     <!-- ============================ CONTEÚDO ============================ -->
     <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
         <div id="tab-hoje" class="tab-panel" role="tabpanel" aria-labelledby="tab-hoje-btn" tabindex="0">
-            <div class="max-w-2xl mx-auto space-y-4">
-                <div class="flex items-center gap-2">
+            <div class="max-w-2xl lg:max-w-6xl mx-auto space-y-5">
+                <div class="flex items-center justify-center lg:justify-start gap-2">
                     <button type="button" id="hojeDiaAnterior" aria-label="Dia anterior"
-                        class="w-9 h-9 shrink-0 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center">
-                        <i aria-hidden="true" class="fa-solid fa-chevron-left"></i>
+                        class="w-8 h-8 shrink-0 rounded-full text-ink-300 dark:text-ink-300 hover:bg-paper-50 dark:hover:bg-paper-700 hover:text-ink-900 dark:hover:text-ink-50 flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-solid fa-chevron-left text-sm"></i>
                     </button>
-                    <h2 class="text-lg font-bold capitalize flex-1 text-center truncate" id="hojeDataLabel">Hoje</h2>
+                    <h2 class="font-display text-lg font-medium capitalize truncate" id="hojeDataLabel">Hoje</h2>
                     <button type="button" id="hojeDiaProximo" aria-label="Próximo dia"
-                        class="w-9 h-9 shrink-0 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed">
-                        <i aria-hidden="true" class="fa-solid fa-chevron-right"></i>
+                        class="w-8 h-8 shrink-0 rounded-full text-ink-300 hover:bg-paper-50 dark:hover:bg-paper-700 hover:text-ink-900 dark:hover:text-ink-50 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed">
+                        <i aria-hidden="true" class="fa-solid fa-chevron-right text-sm"></i>
                     </button>
                 </div>
                 <button type="button" id="hojeVoltarHoje" hidden
-                    class="text-xs font-medium text-brand-700 dark:text-accent-400 hover:underline -mt-2">
+                    class="text-xs font-medium text-sage-700 dark:text-sage-400 hover:underline -mt-3 mx-auto lg:mx-0 block w-fit">
                     <i aria-hidden="true" class="fa-solid fa-arrow-rotate-left mr-1"></i>Voltar para hoje
                 </button>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-ink-400 text-center lg:text-left">
                     Toque para abrir cada categoria, registre e feche — tudo fica salvo
                     automaticamente só neste navegador, sem enviar nada para nenhum servidor.
                 </p>
-                <div id="hojeRoot" class="space-y-3"></div>
+                <div id="hojeRoot" class="space-y-5"></div>
             </div>
         </div>
         <div id="tab-backlog" class="tab-panel" role="tabpanel" aria-labelledby="tab-backlog-btn" tabindex="0" hidden>

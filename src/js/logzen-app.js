@@ -4,16 +4,80 @@
    (logzen-data.js) e liga os inputs (contador, contador-inverso, checkbox,
    escala, tags), o formulário de novo item por categoria e a nota do dia,
    via delegação de eventos.
+
+   Identidade "Sereno" (issue #33): paleta sálvia/argila/anil em vez do
+   semáforo vermelho/amarelo/verde, tipografia mais leve (Fraunces nos
+   títulos, Karla no resto), categorias como cartões suaves — recolhidas
+   por padrão (só a 1ª aberta), em colunas no computador (largura ≥ lg).
+   "Objetivos do dia" e "Metas" ficam em destaque no topo (o primeiro à
+   esquerda, as metas empilhadas à direita); "Como foi meu dia" fecha a
+   tela. Metas (valor-alvo + prazo, só para contador/contador-inverso) são
+   definidas/editadas em Itens rastreados — a tela "Hoje" só mostra o
+   progresso.
    ========================================================================== */
 (function () {
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
 
+    // Cor por intensidade, não por alarme: 0 hoje = calmo (sálvia), 1-2 =
+    // atenção leve (argila), 3+ = atenção mais forte — ainda argila, sem
+    // recorrer ao vermelho.
     const CORES_VICIO = [
-        'bg-green-50 dark:bg-green-950/40 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300',
-        'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300',
-        'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-300',
+        'bg-sage-50 dark:bg-sage-900/40 text-sage-800 dark:text-sage-300',
+        'bg-clay-50 dark:bg-clay-900/40 text-clay-700 dark:text-clay-300',
+        'bg-clay-100 dark:bg-clay-900/60 text-clay-900 dark:text-clay-200',
     ];
     const corVicio = (v) => CORES_VICIO[v <= 0 ? 0 : (v <= 2 ? 1 : 2)];
+
+    // Progresso de uma meta (issue #33): "contador" mira o maior valor já
+    // registrado (bater um recorde); "contador-inverso" mira dias seguidos
+    // sem o hábito (reaproveita o streak que já existia). Sem meta, ou tipo
+    // sem suporte, retorna null (nada a mostrar).
+    function progressoMeta(cat, item, dateKey) {
+        if (!item.meta) return null;
+        const atual = item.tipo === 'contador-inverso'
+            ? window.LogZenData.streakZerado(cat.id, item.id, dateKey)
+            : item.tipo === 'contador'
+                ? window.LogZenData.getMelhorValor(cat.id, item.id)
+                : null;
+        if (atual === null) return null;
+        const alvo = item.meta.valor;
+        return { atual, alvo, bateu: atual >= alvo, prazo: item.meta.prazo || '' };
+    }
+
+    function formatarPrazo(prazo) {
+        if (!prazo) return '';
+        return new Date(prazo + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
+    }
+
+    // Linha discreta sob um item com meta ativa (contador/contador-inverso).
+    // Só exibe o progresso — editar acontece em Itens rastreados.
+    function metaStatusHtml(cat, item, dateKey) {
+        const p = progressoMeta(cat, item, dateKey);
+        if (!p) return '';
+        const unidade = item.tipo === 'contador-inverso' ? ' dias seguidos' : '';
+        const texto = p.bateu
+            ? `Meta batida: ${p.alvo}${unidade}`
+            : `Meta: ${p.atual} de ${p.alvo}${unidade}${p.prazo ? ` · até ${formatarPrazo(p.prazo)}` : ''}`;
+        return `<p data-meta-status class="text-xs ${p.bateu ? 'text-sage-700 dark:text-sage-400' : 'text-anil-600 dark:text-anil-400'} flex items-center gap-1.5 mt-1.5">
+            <i aria-hidden="true" class="fa-solid ${p.bateu ? 'fa-circle-check' : 'fa-bullseye'} text-[10px]"></i>${escapeHtml(texto)}
+        </p>`;
+    }
+
+    // Depois de um clique em +/−/passo-rápido (que só atualiza o número e a
+    // cor no lugar, sem recriar o HTML da categoria inteira — issue #33
+    // exige manter esse desempenho), o progresso da meta (texto na própria
+    // linha do item + card na coluna "Metas") ficaria desatualizado se não
+    // for atualizado à parte aqui.
+    function atualizarMetaUI(root, dateKey, catId, itemId, row) {
+        const cat = window.LogZenCatalog.getCategorias().find((c) => c.id === catId);
+        const item = cat && cat.itens.find((i) => i.id === itemId);
+        if (!item || !item.meta) return;
+        const metaP = row.querySelector('[data-meta-status]');
+        const novoHtml = metaStatusHtml(cat, item, dateKey);
+        if (metaP && novoHtml) metaP.outerHTML = novoHtml;
+        const metasCol = root.querySelector('[data-metas-col]');
+        if (metasCol) metasCol.innerHTML = renderMetas(dateKey);
+    }
 
     // Dia atualmente exibido na tela "Hoje" — mutável para permitir "passear"
     // pelos registros com as setas (issue #5), sem duplicar a lógica de
@@ -35,7 +99,7 @@
     // muda de cor quando já existe uma nota salva, mesmo com a caixa fechada.
     function notaBtn(item, temNota) {
         return `<button type="button" data-action="toggle-nota" aria-expanded="false" aria-label="Nota sobre ${escapeHtml(item.nome)}"
-            class="w-7 h-7 shrink-0 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 ${temNota ? 'text-brand-600 dark:text-accent-400' : 'text-gray-400'}">
+            class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center hover:bg-paper-100 dark:hover:bg-paper-700 ${temNota ? 'text-sage-600 dark:text-sage-400' : 'text-ink-300'}">
             <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
         </button>`;
     }
@@ -44,7 +108,7 @@
         const nota = window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         return `<div data-nota-wrap hidden class="pt-2">
             <textarea data-item-nota rows="2" maxlength="300" placeholder="Nota sobre ${escapeHtml(item.nome)} (opcional)"
-                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(nota)}</textarea>
+                class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${escapeHtml(nota)}</textarea>
         </div>`;
     }
 
@@ -52,18 +116,21 @@
         const valor = window.LogZenData.getItemValue(dateKey, cat.id, item.id, 0);
         const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         return `
-        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador" data-nome="${escapeHtml(item.nome)}">
+        <div class="py-3.5" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador" data-nome="${escapeHtml(item.nome)}">
             <div class="flex items-center justify-between gap-3">
-                <span class="font-medium">${escapeHtml(item.nome)}<span class="block text-xs font-normal text-gray-500 dark:text-gray-400">${escapeHtml(item.unidade || '')}</span></span>
+                <span class="font-medium">${escapeHtml(item.nome)}<span class="block text-xs font-normal text-ink-400">${escapeHtml(item.unidade || '')}</span></span>
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold">−</button>
-                    <span data-value class="w-10 text-center font-mono text-lg tabular-nums">${valor}</span>
-                    <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold">+</button>
-                    ${item.passoRapido ? `<button type="button" data-action="quick" data-amount="${item.passoRapido}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+${item.passoRapido}</button>` : ''}
-                    ${item.passoLitro ? `<button type="button" data-action="quick" data-amount="${item.passoLitro}" class="px-2 py-1.5 rounded border border-brand-300 dark:border-accent-700 text-brand-700 dark:text-accent-400 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-gray-700">+1L</button>` : ''}
+                    <div class="flex items-center gap-1 bg-paper-100 dark:bg-paper-800 rounded-full p-1">
+                        <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-8 h-8 rounded-full hover:bg-white dark:hover:bg-paper-700 flex items-center justify-center">−</button>
+                        <span data-value class="w-9 text-center font-medium tabular-nums">${valor}</span>
+                        <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-8 h-8 rounded-full hover:bg-white dark:hover:bg-paper-700 flex items-center justify-center">+</button>
+                    </div>
+                    ${item.passoRapido ? `<button type="button" data-action="quick" data-amount="${item.passoRapido}" class="px-2.5 py-1.5 rounded-full text-sage-700 dark:text-sage-400 bg-sage-50 dark:bg-sage-900/40 text-xs font-semibold">+${item.passoRapido}</button>` : ''}
+                    ${item.passoLitro ? `<button type="button" data-action="quick" data-amount="${item.passoLitro}" class="px-2.5 py-1.5 rounded-full text-sage-700 dark:text-sage-400 bg-sage-50 dark:bg-sage-900/40 text-xs font-semibold">+1L</button>` : ''}
                     ${notaBtn(item, temNota)}
                 </div>
             </div>
+            ${metaStatusHtml(cat, item, dateKey)}
             ${notaBox(cat, item, dateKey)}
         </div>`;
     }
@@ -73,17 +140,20 @@
         const streak = window.LogZenData.streakZerado(cat.id, item.id, dateKey);
         const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         return `
-        <div data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador-inverso" data-nome="${escapeHtml(item.nome)}" class="rounded-lg border p-3 my-2 transition-colors ${corVicio(valor)}">
+        <div data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="contador-inverso" data-nome="${escapeHtml(item.nome)}" class="rounded-2xl p-3.5 my-2 transition-colors ${corVicio(valor)}">
             <div class="flex items-center justify-between gap-3">
                 <span class="font-medium">${escapeHtml(item.nome)}<span class="block text-xs font-normal opacity-75">${escapeHtml(item.unidade || '')}</span></span>
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-current/40 hover:bg-black/5 dark:hover:bg-white/10 font-bold">−</button>
-                    <span data-value class="w-10 text-center font-mono text-lg tabular-nums">${valor}</span>
-                    <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-9 h-9 rounded-full border border-current/40 hover:bg-black/5 dark:hover:bg-white/10 font-bold">+</button>
+                    <div class="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded-full p-1">
+                        <button type="button" data-action="dec" aria-label="Diminuir ${escapeHtml(item.nome)}" class="w-8 h-8 rounded-full hover:bg-white/60 dark:hover:bg-white/10 flex items-center justify-center">−</button>
+                        <span data-value class="w-9 text-center font-medium tabular-nums">${valor}</span>
+                        <button type="button" data-action="inc" aria-label="Aumentar ${escapeHtml(item.nome)}" class="w-8 h-8 rounded-full hover:bg-white/60 dark:hover:bg-white/10 flex items-center justify-center">+</button>
+                    </div>
                     ${notaBtn(item, temNota)}
                 </div>
             </div>
-            <p data-streak class="text-xs mt-2 flex items-center gap-1"><i aria-hidden="true" class="fa-solid fa-fire"></i> ${streak} dia(s) sem "${escapeHtml(item.nome)}"</p>
+            <p data-streak class="text-xs mt-2 flex items-center gap-1.5"><i aria-hidden="true" class="fa-solid fa-leaf"></i> ${streak} dia(s) sem "${escapeHtml(item.nome)}"</p>
+            ${metaStatusHtml(cat, item, dateKey)}
             ${notaBox(cat, item, dateKey)}
         </div>`;
     }
@@ -92,15 +162,13 @@
         const marcado = !!window.LogZenData.getItemValue(dateKey, cat.id, item.id, false);
         const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         return `
-        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="checkbox" data-nome="${escapeHtml(item.nome)}">
+        <div class="py-3.5" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="checkbox" data-nome="${escapeHtml(item.nome)}">
             <div class="flex items-center justify-between gap-3">
-                <label class="flex items-center gap-3 flex-1 cursor-pointer">
-                    <input type="checkbox" data-action="checkbox" class="w-5 h-5 accent-brand-600 dark:accent-accent-500" ${marcado ? 'checked' : ''} aria-label="${escapeHtml(item.nome)}">
-                    <span class="font-medium">${escapeHtml(item.nome)}</span>
+                <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                    <input type="checkbox" data-action="checkbox" class="w-5 h-5 rounded accent-sage-600 dark:accent-sage-400 shrink-0" ${marcado ? 'checked' : ''} aria-label="${escapeHtml(item.nome)}">
+                    <span class="font-medium truncate">${escapeHtml(item.nome)}</span>
                 </label>
-                <div class="flex items-center gap-2 shrink-0">
-                    ${notaBtn(item, temNota)}
-                </div>
+                ${notaBtn(item, temNota)}
             </div>
             ${notaBox(cat, item, dateKey)}
         </div>`;
@@ -111,18 +179,16 @@
         const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         const estrelas = Array.from({ length: item.max || 5 }, (_, i) => i + 1).map((n) => `
             <button type="button" data-action="star" data-n="${n}" aria-pressed="${n <= valor}" aria-label="${n} de ${item.max || 5}"
-                class="text-2xl leading-none ${n <= valor ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
+                class="text-xl leading-none ${n <= valor ? 'text-clay-600 dark:text-clay-400' : 'text-paper-300 dark:text-paper-700'}">
                 <i aria-hidden="true" class="fa-solid fa-star"></i>
             </button>`).join('');
         return `
-        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="escala" data-nome="${escapeHtml(item.nome)}">
-            <div class="flex items-center justify-between gap-3 mb-1">
+        <div class="py-3.5" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="escala" data-nome="${escapeHtml(item.nome)}">
+            <div class="flex items-center justify-between gap-3 mb-1.5">
                 <p class="font-medium m-0">${escapeHtml(item.nome)}</p>
-                <div class="flex items-center gap-2 shrink-0">
-                    ${notaBtn(item, temNota)}
-                </div>
+                ${notaBtn(item, temNota)}
             </div>
-            <div class="flex gap-1" role="radiogroup" aria-label="${escapeHtml(item.nome)}">${estrelas}</div>
+            <div class="flex flex-wrap gap-1" role="radiogroup" aria-label="${escapeHtml(item.nome)}">${estrelas}</div>
             ${notaBox(cat, item, dateKey)}
         </div>`;
     }
@@ -133,15 +199,13 @@
         const pills = (item.opcoes || []).map((tag) => {
             const ativo = selecionadas.includes(tag);
             return `<button type="button" data-action="tag" data-tag="${escapeHtml(tag)}" aria-pressed="${ativo}"
-                class="px-3 py-1 rounded-full border text-sm ${ativo ? 'bg-brand-600 dark:bg-accent-600 text-white border-brand-600 dark:border-accent-600' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'}">${escapeHtml(tag)}</button>`;
+                class="px-3 py-1 rounded-full text-sm ${ativo ? 'bg-anil-600 text-white' : 'bg-paper-100 dark:bg-paper-800 text-ink-400 hover:text-ink-900 dark:hover:text-ink-50'}">${escapeHtml(tag)}</button>`;
         }).join('');
         return `
-        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="tags" data-nome="${escapeHtml(item.nome)}">
+        <div class="py-3.5" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="tags" data-nome="${escapeHtml(item.nome)}">
             <div class="flex items-center justify-between gap-3 mb-2">
                 <p class="font-medium m-0">${escapeHtml(item.nome)}</p>
-                <div class="flex items-center gap-2 shrink-0">
-                    ${notaBtn(item, temNota)}
-                </div>
+                ${notaBtn(item, temNota)}
             </div>
             <div class="flex flex-wrap gap-2">${pills}</div>
             ${notaBox(cat, item, dateKey)}
@@ -156,23 +220,21 @@
         const valor = window.LogZenData.getItemValue(dateKey, cat.id, item.id, { inicio: '', fim: '' });
         const temNota = !!window.LogZenData.getItemNota(dateKey, cat.id, item.id);
         return `
-        <div class="py-3" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="horario" data-nome="${escapeHtml(item.nome)}">
+        <div class="py-3.5" data-row data-cat="${cat.id}" data-item="${item.id}" data-tipo="horario" data-nome="${escapeHtml(item.nome)}">
             <div class="flex items-center justify-between gap-3 mb-2">
                 <span class="font-medium">${escapeHtml(item.nome)}</span>
-                <div class="flex items-center gap-2 shrink-0">
-                    ${notaBtn(item, temNota)}
-                </div>
+                ${notaBtn(item, temNota)}
             </div>
             <div class="flex items-center gap-3">
                 <div>
-                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Início</label>
+                    <label class="block text-xs text-ink-400 mb-1">Início</label>
                     <input type="time" data-field="inicio" value="${escapeHtml(valor.inicio || '')}"
-                        class="px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="px-2 py-1.5 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Fim</label>
+                    <label class="block text-xs text-ink-400 mb-1">Fim</label>
                     <input type="time" data-field="fim" value="${escapeHtml(valor.fim || '')}"
-                        class="px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="px-2 py-1.5 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
             </div>
             ${notaBox(cat, item, dateKey)}
@@ -201,67 +263,75 @@
         const opcoesTipo = Object.entries(TIPOS_LABEL)
             .map(([valor, label]) => `<option value="${valor}">${escapeHtml(label)}</option>`).join('');
         return `
-        <div class="px-4 pb-4 pt-2 border-t border-gray-100 dark:border-gray-700">
-            <button type="button" data-action="toggle-add-form" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1 py-1">
+        <div class="px-4 pb-4 pt-2 border-t border-paper-200 dark:border-paper-800">
+            <button type="button" data-action="toggle-add-form" class="text-sm font-medium text-sage-700 dark:text-sage-400 hover:underline flex items-center gap-1 py-1">
                 <i aria-hidden="true" class="fa-solid fa-plus"></i> Adicionar item
             </button>
             <form data-add-item-form data-cat="${cat.id}" hidden class="space-y-2 pt-2">
                 <div>
                     <label class="block text-xs font-medium mb-1">Nome</label>
                     <input type="text" data-field="nome" required maxlength="60" placeholder="ex.: Corrida"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Tipo de input</label>
-                    <select data-field="tipo" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    <select data-field="tipo" class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                         ${opcoesTipo}
                     </select>
                 </div>
                 <div data-field-group="unidade">
                     <label class="block text-xs font-medium mb-1">Unidade (opcional)</label>
                     <input type="text" data-field="unidade" maxlength="30" placeholder="ex.: reps, km, copos"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div data-field-group="opcoes" hidden>
                     <label class="block text-xs font-medium mb-1">Opções (separadas por vírgula)</label>
                     <input type="text" data-field="opcoes" placeholder="ex.: Ansiedade, Foco alto"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div class="flex items-center gap-2 pt-1">
-                    <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Adicionar</button>
-                    <button type="button" data-action="cancel-add-form" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-sm font-semibold hover:bg-sage-700">Adicionar</button>
+                    <button type="button" data-action="cancel-add-form" class="px-3 py-1.5 rounded-xl border border-paper-300 dark:border-paper-700 text-sm hover:bg-paper-100 dark:hover:bg-paper-800">Cancelar</button>
                 </div>
             </form>
         </div>`;
     }
 
+    // Categoria como cartão suave (issue #33) — recolhida por padrão (só a
+    // 1ª aberta), com `[break-inside:avoid]` para não quebrar ao meio no
+    // quadro em colunas do computador (ver render()).
     function renderCategoria(cat, dateKey, aberta) {
         const itensHtml = cat.itens.map((item) => (RENDERERS[item.tipo] || (() => ''))(cat, item, dateKey)).join('');
         return `
-        <details data-cat="${cat.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" ${aberta ? 'open' : ''}>
-            <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
-                <i aria-hidden="true" class="fa-solid ${cat.icone} text-brand-600 dark:text-accent-400"></i>
-                ${escapeHtml(cat.nome)}
-                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">${escapeHtml(cat.descricao)}</span>
+        <details data-cat="${cat.id}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm [break-inside:avoid] mb-4" ${aberta ? 'open' : ''}>
+            <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2.5 px-4 py-3.5">
+                <span class="w-6 h-6 rounded-full bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 flex items-center justify-center shrink-0">
+                    <i aria-hidden="true" class="fa-solid ${cat.icone} text-xs"></i>
+                </span>
+                <span class="font-display font-medium">${escapeHtml(cat.nome)}</span>
+                <span class="text-xs font-normal text-ink-400">${escapeHtml(cat.descricao)}</span>
             </summary>
-            <div class="px-4 divide-y divide-gray-100 dark:divide-gray-700">${itensHtml}</div>
+            <div class="px-4 divide-y divide-paper-200 dark:divide-paper-800">${itensHtml}</div>
         </details>`;
     }
 
+    // "Como foi meu dia" (issue #33): fecha o registro do dia com o mesmo
+    // destaque de "Objetivos do dia" — cartão sempre visível, não mais um
+    // <details> recolhível (era fácil esquecer de abrir).
     function renderNota(dateKey) {
         const valor = window.LogZenData.getNota(dateKey);
         return `
-        <details data-cat="__nota__" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" ${valor ? 'open' : ''}>
-            <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
-                <i aria-hidden="true" class="fa-solid fa-note-sticky text-brand-600 dark:text-accent-400"></i>
-                Como foi meu dia
-                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">Observação livre, opcional.</span>
-            </summary>
-            <div class="p-4">
-                <textarea data-nota rows="3" maxlength="500" placeholder="Como foi o dia?"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(valor)}</textarea>
+        <div data-cat="__nota__" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-4 lg:p-5">
+            <div class="flex flex-wrap items-baseline gap-2.5 mb-3">
+                <span class="w-6 h-6 rounded-full bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 flex items-center justify-center shrink-0">
+                    <i aria-hidden="true" class="fa-solid fa-feather text-xs"></i>
+                </span>
+                <h3 class="font-display text-base font-medium">Como foi meu dia</h3>
+                <span class="text-xs font-normal text-ink-400">Observação livre, opcional.</span>
             </div>
-        </details>`;
+            <textarea data-nota rows="3" maxlength="500" placeholder="Como foi o dia?"
+                class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${escapeHtml(valor)}</textarea>
+        </div>`;
     }
 
     // Objetivos do dia (issues #9/#12): tarefas ad-hoc, digitadas na hora —
@@ -269,14 +339,14 @@
     // início. Regra 1-3-5 (lista fechada, estilo Bullet Journal): a COR vem
     // da POSIÇÃO na lista, não de um campo separado de prioridade — é por
     // isso que a lista é arrastável (arrastar É como se muda a prioridade).
-    // 1ª = urgente (vermelho), 2ª–4ª = médias (amarelo), 5ª–9ª = pequenas
-    // (verde), 10ª em diante = sem prioridade fixa (cinza, só um sinal
-    // visual — não bloqueia adicionar mais).
+    // Intensidade de UMA cor por faixa (issue #33), em vez do semáforo
+    // vermelho/amarelo/verde de alarme: 1ª = leve destaque em argila, 2ª–4ª
+    // e 5ª–9ª = sálvia (mais forte → mais claro), 10ª em diante = neutro.
     const CORES_OBJETIVO = [
-        'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900',
-        'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900',
-        'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900',
-        'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700',
+        'bg-clay-50 dark:bg-clay-900/40 border-clay-200 dark:border-clay-700',
+        'bg-sage-50 dark:bg-sage-900/40 border-sage-200 dark:border-sage-700',
+        'bg-sage-50/50 dark:bg-sage-900/20 border-sage-100 dark:border-sage-800',
+        'bg-transparent border-paper-200 dark:border-paper-800',
     ];
     function corObjetivoPorPosicao(indice) {
         if (indice === 0) return CORES_OBJETIVO[0];
@@ -293,7 +363,7 @@
         const nota = window.LogZenData.getObjetivoNota(dateKey, o.id);
         return `<div data-nota-wrap hidden class="pt-2">
             <textarea data-item-nota rows="2" maxlength="300" placeholder="Nota sobre este objetivo (opcional)"
-                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(nota)}</textarea>
+                class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${escapeHtml(nota)}</textarea>
         </div>`;
     }
 
@@ -301,10 +371,10 @@
     // registro histórico, sem checkbox/remover/arrastar.
     function renderObjetivoMigrado(o) {
         return `
-        <li data-objetivo-item data-id="${o.id}" class="flex items-center gap-2 px-2 py-2 rounded border border-gray-200 dark:border-gray-700 opacity-60">
-            <span class="w-5 h-5 shrink-0 flex items-center justify-center text-gray-400" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
-            <span class="flex-1 min-w-0 truncate text-gray-500 dark:text-gray-400">${escapeHtml(o.texto)}</span>
-            <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">Migrado</span>
+        <li data-objetivo-item data-id="${o.id}" class="flex items-center gap-2 px-2 py-2 rounded-xl border border-paper-200 dark:border-paper-800 opacity-60 break-inside-avoid">
+            <span class="w-5 h-5 shrink-0 flex items-center justify-center text-ink-300" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
+            <span class="flex-1 min-w-0 truncate text-ink-400">${escapeHtml(o.texto)}</span>
+            <span class="text-xs text-ink-300 shrink-0">Migrado</span>
         </li>`;
     }
 
@@ -312,18 +382,18 @@
         if (o.migrado) return renderObjetivoMigrado(o);
         const temNota = !!window.LogZenData.getObjetivoNota(dateKey, o.id);
         return `
-        <li data-objetivo-item data-id="${o.id}" class="rounded border p-2 ${corObjetivoPorPosicao(indice)}">
+        <li data-objetivo-item data-id="${o.id}" class="rounded-xl border p-2 break-inside-avoid ${corObjetivoPorPosicao(indice)}">
             <div class="flex items-center gap-2">
                 <button type="button" data-objetivo-drag-handle aria-label="Arrastar para reordenar ${escapeHtml(o.texto)}"
-                    class="w-7 h-7 -ml-1 shrink-0 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
+                    class="w-7 h-7 -ml-1 shrink-0 rounded-full text-ink-300 hover:text-ink-900 dark:hover:text-ink-50 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
                     <i aria-hidden="true" class="fa-solid fa-grip-vertical"></i>
                 </button>
                 <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
-                    <input type="checkbox" data-action="toggle-objetivo" class="w-5 h-5 accent-brand-600 dark:accent-accent-500 shrink-0" ${o.feito ? 'checked' : ''} aria-label="Concluído">
-                    <span class="truncate ${o.feito ? 'line-through text-gray-400 dark:text-gray-500' : ''}">${escapeHtml(o.texto)}</span>
+                    <input type="checkbox" data-action="toggle-objetivo" class="w-5 h-5 rounded accent-sage-600 dark:accent-sage-400 shrink-0" ${o.feito ? 'checked' : ''} aria-label="Concluído">
+                    <span class="truncate ${o.feito ? 'line-through text-ink-300' : ''}">${escapeHtml(o.texto)}</span>
                 </label>
                 ${notaBtnObjetivo(o, temNota)}
-                <button type="button" data-action="remove-objetivo" aria-label="Remover objetivo" class="w-7 h-7 shrink-0 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                <button type="button" data-action="remove-objetivo" aria-label="Remover objetivo" class="w-7 h-7 shrink-0 rounded-full text-ink-300 hover:text-clay-600 hover:bg-clay-50 dark:hover:bg-clay-900/40 flex items-center justify-center">
                     <i aria-hidden="true" class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
@@ -343,32 +413,77 @@
         }).join('');
     }
 
+    // Sempre em destaque (issue #33): cartão fixo, não mais um <details>
+    // recolhível — é a primeira coisa da tela, junto das Metas (renderMetas,
+    // ver render()). Em telas largas, a lista ganha 2 colunas internas.
     function renderObjetivos(dateKey) {
         const lista = window.LogZenData.getObjetivos(dateKey);
         const temAtivos = lista.some((o) => !o.migrado);
         const limite = window.LogZenData.LIMITE_OBJETIVOS_DIA;
         const atingiuLimite = lista.length >= limite;
         return `
-        <details data-cat="__objetivos__" open class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <summary class="cursor-pointer select-none flex flex-wrap items-center gap-2 px-4 py-3 bg-brand-50 dark:bg-gray-800 font-semibold">
-                <i aria-hidden="true" class="fa-solid fa-bullseye text-brand-600 dark:text-accent-400"></i>
-                Objetivos do dia
-                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">Regra 1-3-5 — arraste para definir a prioridade.</span>
-                <span data-objetivos-contador class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-auto">${lista.length}/${limite}</span>
-            </summary>
-            <div class="p-4 space-y-2">
-                <ul data-objetivos-lista class="space-y-2">${renderListaObjetivos(lista, dateKey)}</ul>
-                <p data-objetivos-vazio class="text-xs text-gray-500 dark:text-gray-400 ${temAtivos ? 'hidden' : ''}">Nenhum objetivo ainda — adicione um abaixo, ou envie do Backlog.</p>
-                <p data-objetivos-limite class="text-xs text-amber-600 dark:text-amber-400 ${atingiuLimite ? '' : 'hidden'}">Limite de ${limite} objetivos atingido — conclua ou remova algum para adicionar outro.</p>
-                <form data-add-objetivo-form class="flex items-center gap-2 pt-1" ${atingiuLimite ? 'hidden' : ''}>
-                    <input type="text" data-field="texto" placeholder="Adicionar objetivo…" maxlength="140"
-                        class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                    <button type="submit" aria-label="Adicionar objetivo" class="w-9 h-9 shrink-0 rounded bg-brand-600 dark:bg-accent-600 text-white flex items-center justify-center">
-                        <i aria-hidden="true" class="fa-solid fa-plus"></i>
-                    </button>
-                </form>
+        <div data-cat="__objetivos__" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-4 lg:p-5">
+            <div class="flex flex-wrap items-baseline gap-2.5 mb-3.5">
+                <span class="w-6 h-6 rounded-full bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 flex items-center justify-center shrink-0">
+                    <i aria-hidden="true" class="fa-solid fa-bullseye text-xs"></i>
+                </span>
+                <h3 class="font-display text-base font-medium">Objetivos do dia</h3>
+                <span class="text-xs font-normal text-ink-400">Regra 1-3-5 — arraste para definir a prioridade.</span>
+                <span data-objetivos-contador class="text-xs font-normal text-ink-300 ml-auto tabular-nums">${lista.length}/${limite}</span>
             </div>
-        </details>`;
+            <ul data-objetivos-lista class="space-y-2 lg:columns-2 lg:gap-x-4">${renderListaObjetivos(lista, dateKey)}</ul>
+            <p data-objetivos-vazio class="text-xs text-ink-400 mt-2 ${temAtivos ? 'hidden' : ''}">Nenhum objetivo ainda — adicione um abaixo, ou envie do Backlog.</p>
+            <p data-objetivos-limite class="text-xs text-clay-700 dark:text-clay-400 mt-2 ${atingiuLimite ? '' : 'hidden'}">Limite de ${limite} objetivos atingido — conclua ou remova algum para adicionar outro.</p>
+            <form data-add-objetivo-form class="flex items-center gap-2 pt-3" ${atingiuLimite ? 'hidden' : ''}>
+                <input type="text" data-field="texto" placeholder="Adicionar objetivo…" maxlength="140"
+                    class="flex-1 px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                <button type="submit" aria-label="Adicionar objetivo" class="w-9 h-9 shrink-0 rounded-full bg-sage-600 dark:bg-sage-700 text-white flex items-center justify-center">
+                    <i aria-hidden="true" class="fa-solid fa-plus"></i>
+                </button>
+            </form>
+        </div>`;
+    }
+
+    // Metas com prazo por item (issue #33) — contador (bater um recorde) ou
+    // contador-inverso (dias seguidos sem o hábito). Editar/remover é
+    // sempre em Itens rastreados; aqui só mostra o progresso, empilhado ao
+    // lado de Objetivos do dia (ver render()).
+    function renderMetaCard(cat, item, p) {
+        const unidade = item.tipo === 'contador-inverso' ? ' dias seguidos' : '';
+        const pct = p.alvo > 0 ? Math.max(4, Math.min(100, Math.round((p.atual / p.alvo) * 100))) : 0;
+        return `
+        <div class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-4">
+            <div class="flex items-center gap-2 text-xs text-ink-400 mb-2">
+                ${p.bateu
+                    ? `<i aria-hidden="true" class="fa-solid fa-circle-check text-sage-600 dark:text-sage-400"></i><span>Meta batida · ${escapeHtml(item.nome)}</span>`
+                    : `<i aria-hidden="true" class="fa-solid fa-bullseye text-anil-600 dark:text-anil-400"></i><span>Meta · ${escapeHtml(item.nome)}</span>`}
+            </div>
+            <div class="flex items-baseline gap-1.5 mb-2">
+                <b class="font-display text-xl font-semibold">${p.atual}</b><span class="text-xs text-ink-400">de ${p.alvo}${unidade}</span>
+            </div>
+            <div class="h-1.5 rounded-full bg-paper-200 dark:bg-paper-900 overflow-hidden">
+                <div class="h-full rounded-full ${p.bateu ? 'bg-sage-600' : 'bg-anil-600'}" style="width:${pct}%"></div>
+            </div>
+            <p class="text-xs text-ink-300 mt-2">${p.bateu ? 'Editável em Itens rastreados' : (p.prazo ? `até ${formatarPrazo(p.prazo)}` : 'sem prazo definido')}</p>
+        </div>`;
+    }
+
+    function renderMetas(dateKey) {
+        const categorias = window.LogZenCatalog.getCategorias();
+        const cards = [];
+        categorias.forEach((cat) => {
+            cat.itens.forEach((item) => {
+                const p = progressoMeta(cat, item, dateKey);
+                if (p) cards.push(renderMetaCard(cat, item, p));
+            });
+        });
+        if (!cards.length) {
+            return `
+            <div class="rounded-2xl border border-dashed border-paper-300 dark:border-paper-700 p-4 flex items-center text-xs text-ink-400">
+                Defina metas com prazo para um item em Configurações → Itens rastreados.
+            </div>`;
+        }
+        return `<div class="flex flex-col gap-3">${cards.join('')}</div>`;
     }
 
     // Mantém o contador "(N/limite)" e a mensagem/formulário de limite
@@ -392,13 +507,22 @@
         return `o${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     }
 
+    // Objetivos (esquerda, mais larga) + Metas (direita, empilhadas) em
+    // destaque no topo; abaixo, o quadro de categorias em colunas no
+    // desktop (mansonry via CSS columns, sem JS) — issue #33.
     function render(root, dateKey) {
         if (dateKey === window.LogZenData.todayKey()) window.LogZenData.migrarObjetivosPendentes(dateKey);
         const categorias = window.LogZenCatalog.getCategorias();
-        root.innerHTML =
-            renderObjetivos(dateKey) +
-            categorias.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('') +
-            renderNota(dateKey);
+        root.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-4 items-start">
+                ${renderObjetivos(dateKey)}
+                <div data-metas-col>${renderMetas(dateKey)}</div>
+            </div>
+            <div class="columns-1 lg:columns-2 xl:columns-3 gap-4">
+                ${categorias.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('')}
+            </div>
+            ${renderNota(dateKey)}
+        `;
     }
 
     // Roda `renderFn` recriando o HTML de `root` mas preservando quais
@@ -406,13 +530,15 @@
     // para atualizar a tela "Hoje" depois que a lista de itens (issue #6) ou
     // a ordem (issue #7) mudam em Configurações, sem perder o que o usuário
     // tinha aberto. Casa por `data-cat`, não por posição — categorias podem
-    // ter sido reordenadas entre a captura e a recriação.
+    // ter sido reordenadas entre a captura e a recriação. As categorias
+    // ficam dentro do quadro em colunas (issue #33), não mais filhas diretas
+    // de `root` — por isso a busca não usa mais `:scope >`.
     function reRenderComEstado(root, renderFn) {
         const abertos = new Map(
-            Array.from(root.querySelectorAll(':scope > details[data-cat]')).map((d) => [d.dataset.cat, d.open])
+            Array.from(root.querySelectorAll('details[data-cat]')).map((d) => [d.dataset.cat, d.open])
         );
         renderFn();
-        root.querySelectorAll(':scope > details[data-cat]').forEach((d) => {
+        root.querySelectorAll('details[data-cat]').forEach((d) => {
             if (abertos.has(d.dataset.cat)) d.open = abertos.get(d.dataset.cat);
         });
     }
@@ -560,10 +686,11 @@
                 row.querySelector('[data-value]').textContent = valor;
                 if (tipo === 'contador-inverso') {
                     row.className = row.className.replace(/bg-\S+|dark:bg-\S+|border-\S+|dark:border-\S+|text-\S+|dark:text-\S+/g, '').trim();
-                    row.classList.add('rounded-lg', 'border', 'p-3', 'my-2', 'transition-colors', ...corVicio(valor).split(' '));
+                    row.classList.add('rounded-2xl', 'p-3.5', 'my-2', 'transition-colors', ...corVicio(valor).split(' '));
                     row.querySelector('[data-streak]').textContent =
                         `${window.LogZenData.streakZerado(cat, item, dataAtual)} dia(s) sem "${row.dataset.nome}"`;
                 }
+                atualizarMetaUI(root, dataAtual, cat, item, row);
                 return;
             }
 
@@ -740,7 +867,55 @@
                     </button>
                 </div>
             </div>
+            ${metaConfigHtml(cat, item)}
             ${renderFormularioEditarItem(cat, item)}
+        </div>`;
+    }
+
+    // Meta (issue #33): valor-alvo opcional + prazo, só para "contador"
+    // (bater recorde) e "contador-inverso" (sequência de dias sem o
+    // hábito) — os outros tipos não têm um único número de progresso.
+    // Definir/editar/remover só acontece aqui; a tela "Hoje" só mostra o
+    // progresso (nunca oferece editar a meta por lá).
+    function metaConfigHtml(cat, item) {
+        if (item.tipo !== 'contador' && item.tipo !== 'contador-inverso') return '';
+        const meta = item.meta;
+        const unidade = item.tipo === 'contador-inverso' ? ' dias seguidos' : '';
+        const resumo = meta
+            ? `${meta.valor}${unidade}${meta.prazo ? ` · até ${escapeHtml(new Date(meta.prazo + 'T00:00:00').toLocaleDateString('pt-BR'))}` : ''}`
+            : '';
+        return `
+        <div data-meta-row class="pb-3 -mt-1">
+            <div class="flex items-center gap-2 text-xs">
+                ${meta ? `
+                <i aria-hidden="true" class="fa-solid fa-bullseye text-brand-600 dark:text-accent-400"></i>
+                <span class="text-gray-500 dark:text-gray-400">Meta: ${resumo}</span>
+                <button type="button" data-action="toggle-edit-meta" aria-label="Editar meta de ${escapeHtml(item.nome)}"
+                    class="w-6 h-6 rounded text-gray-400 hover:text-brand-600 dark:hover:text-accent-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center">
+                    <i aria-hidden="true" class="fa-solid fa-pen text-[10px]"></i>
+                </button>
+                <button type="button" data-action="remove-meta" aria-label="Remover meta de ${escapeHtml(item.nome)}"
+                    class="w-6 h-6 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                    <i aria-hidden="true" class="fa-solid fa-trash text-[10px]"></i>
+                </button>` : `
+                <button type="button" data-action="toggle-add-meta" class="text-brand-700 dark:text-accent-400 hover:underline">
+                    <i aria-hidden="true" class="fa-solid fa-plus"></i> Definir meta
+                </button>`}
+            </div>
+            <form data-meta-form data-cat="${cat.id}" data-item="${item.id}" hidden class="flex flex-wrap items-end gap-2 pt-2">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Valor-alvo${unidade ? ' (dias)' : ''}</label>
+                    <input type="number" data-field="valor" min="1" step="1" required value="${meta ? meta.valor : ''}"
+                        class="w-24 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Prazo (opcional)</label>
+                    <input type="date" data-field="prazo" value="${meta ? meta.prazo || '' : ''}"
+                        class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                </div>
+                <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Salvar</button>
+                <button type="button" data-action="cancel-meta-form" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+            </form>
         </div>`;
     }
 
@@ -877,6 +1052,37 @@
                 return;
             }
 
+            const toggleAddMetaBtn = e.target.closest('[data-action="toggle-add-meta"]');
+            if (toggleAddMetaBtn) {
+                const form = toggleAddMetaBtn.closest('[data-meta-row]').querySelector('form[data-meta-form]');
+                form.hidden = !form.hidden;
+                if (!form.hidden) form.querySelector('[data-field="valor"]').focus();
+                return;
+            }
+
+            const toggleEditMetaBtn = e.target.closest('[data-action="toggle-edit-meta"]');
+            if (toggleEditMetaBtn) {
+                const form = toggleEditMetaBtn.closest('[data-meta-row]').querySelector('form[data-meta-form]');
+                form.hidden = !form.hidden;
+                if (!form.hidden) form.querySelector('[data-field="valor"]').focus();
+                return;
+            }
+
+            const cancelMetaBtn = e.target.closest('[data-action="cancel-meta-form"]');
+            if (cancelMetaBtn) {
+                cancelMetaBtn.closest('form[data-meta-form]').hidden = true;
+                return;
+            }
+
+            const removeMetaBtn = e.target.closest('[data-action="remove-meta"]');
+            if (removeMetaBtn) {
+                const row = removeMetaBtn.closest('[data-meta-row]');
+                window.LogZenCatalog.removeMeta(row.closest('[data-item-row]').dataset.cat, row.closest('[data-item-row]').dataset.item);
+                renderItensConfig();
+                sincronizarHoje();
+                return;
+            }
+
             const deleteBtn = e.target.closest('[data-action="delete-item"]');
             if (deleteBtn) {
                 const row = deleteBtn.closest('[data-item-row]');
@@ -964,6 +1170,18 @@
                     }
                 }
                 window.LogZenCatalog.updateItem(editForm.dataset.cat, editForm.dataset.item, dados);
+                renderItensConfig();
+                sincronizarHoje();
+                return;
+            }
+
+            const metaForm = e.target.closest('form[data-meta-form]');
+            if (metaForm) {
+                e.preventDefault();
+                const valor = parseInt(metaForm.querySelector('[data-field="valor"]').value, 10);
+                if (!valor || valor < 1) return;
+                const prazo = metaForm.querySelector('[data-field="prazo"]').value;
+                window.LogZenCatalog.setMeta(metaForm.dataset.cat, metaForm.dataset.item, { valor, prazo });
                 renderItensConfig();
                 sincronizarHoje();
                 return;

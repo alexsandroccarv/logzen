@@ -8,7 +8,8 @@
    personalizadas — funcionam do mesmo jeito que as 5 originais. O arquivo
    logzen-items.js nunca é modificado; o `id` de um item/categoria nunca
    muda, então o histórico salvo por data continua válido mesmo depois de
-   editado ou "excluído".
+   editado ou "excluído". Meta opcional (valor-alvo + prazo) por item —
+   issue #33 — guardada separada, mesclada em cada item por getCategorias().
    ========================================================================== */
 window.LogZenCatalog = (function () {
     const STORAGE_KEY = 'logzen:custom-items:v1';
@@ -16,6 +17,7 @@ window.LogZenCatalog = (function () {
     const OVERRIDES_KEY = 'logzen:item-overrides:v1';
     const HIDDEN_KEY = 'logzen:item-hidden:v1';
     const CATEGORIAS_KEY = 'logzen:custom-categorias:v1';
+    const METAS_KEY = 'logzen:item-metas:v1';
     const DIACRITICOS = /[̀-ͯ]/g;
 
     function readCategoriasCustom() {
@@ -274,13 +276,57 @@ window.LogZenCatalog = (function () {
         const categorias = window.LogZenReorder.aplicarOrdem(base, (c) => c.id, getOrdemCategorias());
         return categorias.map((cat) => ({
             ...cat,
-            itens: window.LogZenReorder.aplicarOrdem(cat.itens, (i) => i.id, getOrdemItens(cat.id)),
+            itens: window.LogZenReorder.aplicarOrdem(cat.itens, (i) => i.id, getOrdemItens(cat.id))
+                .map((item) => {
+                    const meta = getMeta(cat.id, item.id);
+                    return meta ? { ...item, meta } : item;
+                }),
         }));
+    }
+
+    function readMetas() {
+        try {
+            const raw = localStorage.getItem(METAS_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function writeMetas(metas) {
+        try { localStorage.setItem(METAS_KEY, JSON.stringify(metas)); }
+        catch (e) { /* storage indisponível — segue sem persistir */ }
+    }
+
+    // Meta opcional (valor-alvo + prazo) por item — issue #33. Só faz
+    // sentido para "contador" (bater um recorde) e "contador-inverso"
+    // (dias seguidos sem o hábito). Editar/remover é feito sempre em
+    // Itens rastreados (Configurações) — a tela "Hoje" só mostra o
+    // progresso, nunca oferece editar a meta por lá.
+    function getMeta(categoriaId, itemId) {
+        const metas = readMetas();
+        return (metas[categoriaId] && metas[categoriaId][itemId]) || null;
+    }
+
+    function setMeta(categoriaId, itemId, dados) {
+        const metas = readMetas();
+        if (!metas[categoriaId]) metas[categoriaId] = {};
+        metas[categoriaId][itemId] = { valor: dados.valor, prazo: dados.prazo || '' };
+        writeMetas(metas);
+    }
+
+    function removeMeta(categoriaId, itemId) {
+        const metas = readMetas();
+        if (metas[categoriaId]) {
+            delete metas[categoriaId][itemId];
+            writeMetas(metas);
+        }
     }
 
     return {
         getCategorias, addCustomItem, updateItem, removeItem,
         getOrdemCategorias, setOrdemCategorias, getOrdemItens, setOrdemItens,
         getCategoriasSugeridasDisponiveis, addCategoria, removeCategoria,
+        getMeta, setMeta, removeMeta,
     };
 })();

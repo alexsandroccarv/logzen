@@ -8,6 +8,15 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Changed
+- Tela "Hoje": nova identidade visual **"Sereno"** — paleta sálvia/argila/
+  anil sobre fundo papel (substitui o esquema vermelho/amarelo/verde),
+  tipografia Fraunces + Karla, categorias como cartões arredondados sem
+  bordas duras. No desktop, as categorias passam a usar um quadro em
+  colunas (1 no celular, 2 no notebook, 3 em telas largas) para não deixar
+  a tela comprida quando há muitos itens rastreados. "Objetivos do dia" e
+  "Metas" ganham destaque lado a lado no topo (desktop) e "Como foi meu
+  dia" fica sempre visível no final da tela — nenhum dos três mais
+  escondido atrás de abrir/fechar (issue #33).
 - Avaliação pessoal em **10 estrelas** (era 5) em Vídeos, Livros e
   Podcasts — valores já salvos (1-5) continuam válidos dentro da nova
   escala (issue #32).
@@ -17,6 +26,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   salvos (issue #30).
 
 ### Added
+- **Metas** por item: itens do tipo "contador" (bater um recorde, ex.: "60
+  abdominais") ou "contador-inverso" (dias seguidos sem o hábito) podem
+  ganhar uma meta opcional (valor-alvo + prazo), definida em
+  Configurações → Itens rastreados. A tela "Hoje" só mostra o progresso
+  (texto na linha do item + cartão dedicado na coluna "Metas") — editar ou
+  remover é sempre feito onde a meta foi criada. Ao ser atingida, o
+  cartão muda de cor e ganha um ícone de check, mas continua visível
+  (issue #33).
 - Vídeos: ao registrar ou editar uma Série, mostra as
   temporadas/episódios já registrados do mesmo título (ex.: "Já
   registrados: T1E1, T1E2") — ajuda a lembrar o que já foi visto e
