@@ -483,7 +483,9 @@
                 Defina metas com prazo para um item em Configurações → Itens rastreados.
             </div>`;
         }
-        return `<div class="flex flex-col gap-3">${cards.join('')}</div>`;
+        // Em linha (não empilhado) abaixo dos Objetivos — evita que uma
+        // coluna vertical de metas fique mais alta que o resto da tela.
+        return `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">${cards.join('')}</div>`;
     }
 
     // Mantém o contador "(N/limite)" e a mensagem/formulário de limite
@@ -514,10 +516,8 @@
         if (dateKey === window.LogZenData.todayKey()) window.LogZenData.migrarObjetivosPendentes(dateKey);
         const categorias = window.LogZenCatalog.getCategorias();
         root.innerHTML = `
-            <div class="grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-4 items-start">
-                ${renderObjetivos(dateKey)}
-                <div data-metas-col>${renderMetas(dateKey)}</div>
-            </div>
+            ${renderObjetivos(dateKey)}
+            <div data-metas-col>${renderMetas(dateKey)}</div>
             <div class="columns-1 lg:columns-2 xl:columns-3 gap-4">
                 ${categorias.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('')}
             </div>

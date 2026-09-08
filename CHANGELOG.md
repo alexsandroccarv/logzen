@@ -7,6 +7,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Fixed
+- Tela "Hoje": "Metas" deixa de ficar numa coluna lateral empilhada
+  verticalmente (o que estourava a página quando havia várias metas) e
+  passa a ficar em uma linha, com os cartões lado a lado, logo abaixo de
+  "Objetivos do dia" (issue #34).
+
 ### Changed
 - Tela "Hoje": nova identidade visual **"Sereno"** — paleta sálvia/argila/
   anil sobre fundo papel (substitui o esquema vermelho/amarelo/verde),
