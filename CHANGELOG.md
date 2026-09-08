@@ -7,7 +7,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Fixed
+- Tela "Hoje": "Metas" deixa de ficar numa coluna lateral empilhada
+  verticalmente (o que estourava a página quando havia várias metas) e
+  passa a ficar em uma linha, com os cartões lado a lado, logo abaixo de
+  "Objetivos do dia" (issue #34).
+
 ### Changed
+- Identidade visual **"Sereno"** estendida para Backlog, Entregas, Vídeos,
+  Livros, Podcasts e Configurações (antes só na tela "Hoje"): cartões
+  arredondados com sombra suave em vez de borda cinza dura, fundo papel,
+  botões e links em sálvia em vez de azul/verde-água, estrelas de
+  avaliação em argila em vez de âmbar. Cabeçalho e rodapé mantêm a
+  identidade de marca atual (fora do escopo) (issue #36).
 - Tela "Hoje": nova identidade visual **"Sereno"** — paleta sálvia/argila/
   anil sobre fundo papel (substitui o esquema vermelho/amarelo/verde),
   tipografia Fraunces + Karla, categorias como cartões arredondados sem
@@ -26,6 +38,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   salvos (issue #30).
 
 ### Added
+- **Metas de ocorrência** para itens do tipo "checkbox": valor-alvo +
+  período (semana ou mês), ex.: "yoga 2x por semana". O progresso conta
+  quantos dias dentro da semana (segunda a domingo) ou mês corrente o
+  item foi marcado, e reinicia sozinho a cada novo período — definida do
+  mesmo jeito das demais metas, em Configurações → Itens rastreados
+  (issue #35).
 - **Metas** por item: itens do tipo "contador" (bater um recorde, ex.: "60
   abdominais") ou "contador-inverso" (dias seguidos sem o hábito) podem
   ganhar uma meta opcional (valor-alvo + prazo), definida em

@@ -204,7 +204,7 @@ window.LogZenLivros = (function () {
     function estrelasBtns(valorAtual) {
         return Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `
             <button type="button" data-action="estrela" data-n="${n}" aria-pressed="${n <= valorAtual}" aria-label="${n} de 10 estrelas"
-                class="text-xl leading-none ${n <= valorAtual ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
+                class="text-xl leading-none ${n <= valorAtual ? 'text-clay-600 dark:text-clay-400' : 'text-paper-300 dark:text-paper-700'}">
                 <i aria-hidden="true" class="fa-solid fa-star"></i>
             </button>`).join('');
     }
@@ -212,13 +212,13 @@ window.LogZenLivros = (function () {
     function renderResultadoBusca(item) {
         return `
         <button type="button" data-action="selecionar-resultado" data-id="${escapeHtml(item.id)}"
-            class="w-full flex items-center gap-3 p-2 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-left">
+            class="w-full flex items-center gap-3 p-2 rounded-xl border border-paper-200 dark:border-paper-800 hover:bg-paper-50 dark:hover:bg-paper-800 text-left">
             ${item.capa
-                ? `<img src="${escapeHtml(item.capa)}" alt="" class="w-10 h-14 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
-                : `<div class="w-10 h-14 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-book"></i></div>`}
+                ? `<img src="${escapeHtml(item.capa)}" alt="" class="w-10 h-14 object-cover rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800">`
+                : `<div class="w-10 h-14 rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800 flex items-center justify-center text-ink-300"><i aria-hidden="true" class="fa-solid fa-book"></i></div>`}
             <div class="min-w-0">
                 <p class="font-medium truncate">${escapeHtml(item.titulo)}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml([item.autor, item.ano].filter(Boolean).join(' · '))}</p>
+                <p class="text-xs text-ink-400 truncate">${escapeHtml([item.autor, item.ano].filter(Boolean).join(' · '))}</p>
             </div>
         </button>`;
     }
@@ -231,46 +231,46 @@ window.LogZenLivros = (function () {
             <div>
                 <label class="block text-xs font-medium mb-1">Título</label>
                 <input type="text" data-field="titulo" required maxlength="150" value="${escapeHtml(rascunho.titulo)}" placeholder="Nome do livro"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Autor</label>
                 <input type="text" data-field="autor" maxlength="150" value="${escapeHtml(rascunho.autor || '')}" placeholder="Nome do autor"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>`
             : `
             <div class="flex gap-3">
                 ${rascunho.capa
-                    ? `<img src="${escapeHtml(rascunho.capa)}" alt="" class="w-16 h-24 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
-                    : `<div class="w-16 h-24 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-book text-xl"></i></div>`}
+                    ? `<img src="${escapeHtml(rascunho.capa)}" alt="" class="w-16 h-24 object-cover rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800">`
+                    : `<div class="w-16 h-24 rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800 flex items-center justify-center text-ink-300"><i aria-hidden="true" class="fa-solid fa-book text-xl"></i></div>`}
                 <div class="min-w-0 flex-1">
-                    <p class="font-semibold truncate">${escapeHtml(rascunho.titulo)}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(rascunho.autor || '')}</p>
+                    <p class="font-medium truncate">${escapeHtml(rascunho.titulo)}</p>
+                    <p class="text-xs text-ink-400">${escapeHtml(rascunho.autor || '')}</p>
                 </div>
             </div>`;
         return `
-        <form data-form-rascunho class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+        <form data-form-rascunho class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-4 space-y-3">
             ${cabecalho}
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-medium mb-1">Editora</label>
                     <input type="text" data-field="editora" maxlength="100" value="${escapeHtml(rascunho.editora || '')}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Idioma</label>
                     <input type="text" data-field="idioma" maxlength="40" placeholder="ex.: Português" value="${escapeHtml(rascunho.idioma || '')}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div class="col-span-2">
                     <label class="block text-xs font-medium mb-1">Páginas</label>
                     <input type="number" data-field="paginas" min="1" value="${escapeHtml(rascunho.paginas || '')}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Formato</label>
                     <select data-field="formato"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                         <option value="analogico" ${!rascunho.formato || rascunho.formato === 'analogico' ? 'selected' : ''}>Analógico (papel)</option>
                         <option value="digital" ${rascunho.formato === 'digital' ? 'selected' : ''}>Digital</option>
                     </select>
@@ -278,7 +278,7 @@ window.LogZenLivros = (function () {
                 <div>
                     <label class="block text-xs font-medium mb-1">Posse</label>
                     <select data-field="posse"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                         <option value="proprio" ${!rascunho.posse || rascunho.posse === 'proprio' ? 'selected' : ''}>Próprio</option>
                         <option value="emprestado" ${rascunho.posse === 'emprestado' ? 'selected' : ''}>Emprestado</option>
                     </select>
@@ -288,12 +288,12 @@ window.LogZenLivros = (function () {
                 <div>
                     <label class="block text-xs font-medium mb-1">Início da leitura</label>
                     <input type="date" data-field="dataInicio" value="${rascunho.dataInicio}" max="${hoje}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Fim da leitura</label>
                     <input type="date" data-field="dataFim" value="${rascunho.dataFim || ''}" max="${hoje}" placeholder="ainda lendo"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
             </div>
             <div>
@@ -303,11 +303,11 @@ window.LogZenLivros = (function () {
             <div>
                 <label class="block text-xs font-medium mb-1">Minha opinião</label>
                 <textarea data-field="opiniao" rows="3" maxlength="500" placeholder="O que achou?"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(rascunho.opiniao || '')}</textarea>
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${escapeHtml(rascunho.opiniao || '')}</textarea>
             </div>
             <div class="flex items-center gap-2">
-                <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">${editandoId ? 'Salvar alterações' : 'Salvar'}</button>
-                <button type="button" data-action="cancelar-rascunho" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-3 py-1.5 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-sm font-medium hover:bg-sage-700">${editandoId ? 'Salvar alterações' : 'Salvar'}</button>
+                <button type="button" data-action="cancelar-rascunho" class="px-3 py-1.5 rounded-xl border border-paper-300 dark:border-paper-700 text-sm hover:bg-paper-100 dark:hover:bg-paper-700">Cancelar</button>
             </div>
         </form>`;
     }
@@ -315,19 +315,19 @@ window.LogZenLivros = (function () {
     function renderPainelAdicionar() {
         if (rascunho) return renderRascunho();
         return `
-        <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 space-y-3">
-            <button type="button" data-action="toggle-add-livro" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
+        <div class="rounded-2xl border border-dashed border-paper-300 dark:border-paper-700 p-4 space-y-3">
+            <button type="button" data-action="toggle-add-livro" class="text-sm font-medium text-sage-700 dark:text-sage-400 hover:underline flex items-center gap-1">
                 <i aria-hidden="true" class="fa-solid fa-plus"></i> Registrar livro
             </button>
             <div data-add-livro-body hidden class="space-y-3">
                 <form data-form-busca class="flex items-center gap-2">
                     <input type="text" data-field="busca" placeholder="Título do livro ou ISBN…"
-                        class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                    <button type="submit" class="px-3 py-2 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700 shrink-0">Buscar</button>
+                        class="flex-1 px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    <button type="submit" class="px-3 py-2 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-sm font-medium hover:bg-sage-700 shrink-0">Buscar</button>
                 </form>
-                <p data-busca-status class="text-xs text-gray-500 dark:text-gray-400 hidden"></p>
+                <p data-busca-status class="text-xs text-ink-400 hidden"></p>
                 <div data-resultados-busca class="space-y-2"></div>
-                <button type="button" data-action="adicionar-manual" class="text-xs font-medium text-brand-700 dark:text-accent-400 hover:underline">
+                <button type="button" data-action="adicionar-manual" class="text-xs font-medium text-sage-700 dark:text-sage-400 hover:underline">
                     Ou adicionar sem buscar
                 </button>
             </div>
@@ -336,8 +336,8 @@ window.LogZenLivros = (function () {
 
     function renderEntrada(e) {
         const capa = e.capa
-            ? `<img src="${escapeHtml(e.capa)}" alt="" class="w-14 h-20 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
-            : `<div class="w-14 h-20 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-book"></i></div>`;
+            ? `<img src="${escapeHtml(e.capa)}" alt="" class="w-14 h-20 object-cover rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800">`
+            : `<div class="w-14 h-20 rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800 flex items-center justify-center text-ink-300"><i aria-hidden="true" class="fa-solid fa-book"></i></div>`;
         const detalhes = [e.editora, e.idioma, e.paginas ? `${e.paginas} pág.` : '', FORMATO_LABEL[e.formato], POSSE_LABEL[e.posse]].filter(Boolean).join(' · ');
         const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
         let periodo = '';
@@ -345,25 +345,25 @@ window.LogZenLivros = (function () {
         else if (e.dataInicio) periodo = `Lendo desde ${fmt(e.dataInicio)}`;
         else if (e.dataFim) periodo = `Concluído em ${fmt(e.dataFim)}`;
         const estrelas = Array.from({ length: 10 }, (_, i) => i + 1)
-            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-xs"></i>`).join('');
+            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-clay-600 dark:text-clay-400' : 'text-paper-300 dark:text-paper-700'} text-xs"></i>`).join('');
         return `
-        <div data-livro-entrada data-id="${e.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex gap-3">
+        <div data-livro-entrada data-id="${e.id}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-3 flex gap-3">
             ${capa}
             <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
-                        <p class="font-semibold truncate">${escapeHtml(e.titulo)}</p>
-                        ${e.autor ? `<p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(e.autor)}</p>` : ''}
-                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)}</p>
-                        ${periodo ? `<p class="text-xs font-medium text-brand-700 dark:text-accent-400 truncate">${escapeHtml(periodo)}</p>` : ''}
+                        <p class="font-medium truncate">${escapeHtml(e.titulo)}</p>
+                        ${e.autor ? `<p class="text-xs text-ink-400 truncate">${escapeHtml(e.autor)}</p>` : ''}
+                        <p class="text-xs text-ink-400 truncate">${escapeHtml(detalhes)}</p>
+                        ${periodo ? `<p class="text-xs font-medium text-sage-700 dark:text-sage-400 truncate">${escapeHtml(periodo)}</p>` : ''}
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
                         <button type="button" data-action="editar-livro" aria-label="Editar ${escapeHtml(e.titulo)}"
-                            class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                            class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                             <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
                         </button>
                         <button type="button" data-action="remover-livro" aria-label="Remover ${escapeHtml(e.titulo)}"
-                            class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                            class="w-7 h-7 rounded-full text-ink-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
                             <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
                         </button>
                     </div>
@@ -379,7 +379,7 @@ window.LogZenLivros = (function () {
         const entradas = window.LogZenLivros.listar();
         const listaHtml = entradas.length
             ? entradas.map(renderEntrada).join('')
-            : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhum livro registrado ainda.</p>';
+            : '<p class="text-xs text-ink-400">Nenhum livro registrado ainda.</p>';
         root.innerHTML = renderPainelAdicionar() + `<div data-livros-lista class="space-y-3">${listaHtml}</div>`;
     }
 
@@ -455,9 +455,10 @@ window.LogZenLivros = (function () {
                     const bn = parseInt(b.dataset.n, 10);
                     const ativo = bn <= rascunho.estrelas;
                     b.setAttribute('aria-pressed', ativo);
-                    b.classList.toggle('text-amber-400', ativo);
-                    b.classList.toggle('text-gray-300', !ativo);
-                    b.classList.toggle('dark:text-gray-600', !ativo);
+                    b.classList.toggle('text-clay-600', ativo);
+                    b.classList.toggle('dark:text-clay-400', ativo);
+                    b.classList.toggle('text-paper-300', !ativo);
+                    b.classList.toggle('dark:text-paper-700', !ativo);
                 });
                 return;
             }

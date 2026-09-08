@@ -321,7 +321,7 @@ window.LogZenFilmes = (function () {
     function estrelasBtns(valorAtual) {
         return Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `
             <button type="button" data-action="estrela" data-n="${n}" aria-pressed="${n <= valorAtual}" aria-label="${n} de 10 estrelas"
-                class="text-xl leading-none ${n <= valorAtual ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}">
+                class="text-xl leading-none ${n <= valorAtual ? 'text-clay-600 dark:text-clay-400' : 'text-paper-300 dark:text-paper-700'}">
                 <i aria-hidden="true" class="fa-solid fa-star"></i>
             </button>`).join('');
     }
@@ -329,13 +329,13 @@ window.LogZenFilmes = (function () {
     function renderResultadoBusca(item) {
         return `
         <button type="button" data-action="selecionar-resultado" data-id="${escapeHtml(item.id)}"
-            class="w-full flex items-center gap-3 p-2 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-left">
+            class="w-full flex items-center gap-3 p-2 rounded-xl border border-paper-200 dark:border-paper-800 hover:bg-paper-50 dark:hover:bg-paper-800 text-left">
             ${item.poster
-                ? `<img src="${escapeHtml(item.poster)}" alt="" class="w-10 h-14 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
-                : `<div class="w-10 h-14 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-film"></i></div>`}
+                ? `<img src="${escapeHtml(item.poster)}" alt="" class="w-10 h-14 object-cover rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800">`
+                : `<div class="w-10 h-14 rounded shrink-0 bg-paper-100 dark:bg-paper-800 flex items-center justify-center text-ink-300"><i aria-hidden="true" class="fa-solid fa-film"></i></div>`}
             <div class="min-w-0">
                 <p class="font-medium truncate">${escapeHtml(item.titulo)}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(item.ano || '')} · ${escapeHtml(TIPO_LABEL[item.tipo] || item.tipo || '')} · ${escapeHtml(FONTES_LABEL[item.fonte] || item.fonte)}</p>
+                <p class="text-xs text-ink-400">${escapeHtml(item.ano || '')} · ${escapeHtml(TIPO_LABEL[item.tipo] || item.tipo || '')} · ${escapeHtml(FONTES_LABEL[item.fonte] || item.fonte)}</p>
             </div>
         </button>`;
     }
@@ -344,18 +344,18 @@ window.LogZenFilmes = (function () {
         const ordem = window.LogZenFilmes.getFontesOrdem();
         const habilitadas = window.LogZenFilmes.getFontesHabilitadas();
         return ordem.map((fonte, i) => `
-            <div class="flex items-center gap-2 p-2 rounded border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2 p-2 rounded-xl border border-paper-200 dark:border-paper-800">
                 <input type="checkbox" data-action="toggle-fonte" data-fonte="${fonte}" ${habilitadas[fonte] ? 'checked' : ''}
-                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-400">
+                    class="rounded border-paper-300 dark:border-paper-700 accent-sage-600 dark:accent-sage-400 focus:ring-sage-400">
                 <span class="flex-1 text-sm">${escapeHtml(FONTES_LABEL_CONFIG[fonte] || fonte)}</span>
                 <button type="button" data-action="mover-fonte" data-fonte="${fonte}" data-dir="-1" ${i === 0 ? 'disabled' : ''}
                     aria-label="Mover ${escapeHtml(FONTES_LABEL[fonte])} para cima"
-                    class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none">
+                    class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none">
                     <i aria-hidden="true" class="fa-solid fa-chevron-up text-xs"></i>
                 </button>
                 <button type="button" data-action="mover-fonte" data-fonte="${fonte}" data-dir="1" ${i === ordem.length - 1 ? 'disabled' : ''}
                     aria-label="Mover ${escapeHtml(FONTES_LABEL[fonte])} para baixo"
-                    class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none">
+                    class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none">
                     <i aria-hidden="true" class="fa-solid fa-chevron-down text-xs"></i>
                 </button>
             </div>`).join('');
@@ -386,7 +386,7 @@ window.LogZenFilmes = (function () {
         <div>
             <label class="block text-xs font-medium mb-1">Onde assistiu</label>
             <select data-field="local" required
-                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 <option value="" ${!r.local ? 'selected' : ''} disabled>Selecione…</option>
                 <option value="tv_aberta" ${r.local === 'tv_aberta' ? 'selected' : ''}>TV aberta</option>
                 <option value="cinema" ${r.local === 'cinema' ? 'selected' : ''}>Cinema</option>
@@ -397,7 +397,7 @@ window.LogZenFilmes = (function () {
         <div data-streaming-campos ${streamingHidden}>
             <label class="block text-xs font-medium mb-1">Serviço de streaming</label>
             <select data-field="servico"
-                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 <option value="">Selecione…</option>
                 ${SERVICOS_STREAMING.map((s) => {
                     const valor = s === 'Outro' ? 'outro' : s;
@@ -405,7 +405,7 @@ window.LogZenFilmes = (function () {
                 }).join('')}
             </select>
             <input type="text" data-field="servicoOutro" ${servicoOutroHidden} maxlength="60" placeholder="Nome do serviço" value="${escapeHtml(r.servicoOutro || '')}"
-                class="mt-2 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                class="mt-2 w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
         </div>`;
     }
 
@@ -424,26 +424,26 @@ window.LogZenFilmes = (function () {
         const textoExistentes = textoEpisodiosExistentes(r.titulo);
         return `
         <div data-episodio-campos ${hidden} class="grid grid-cols-2 gap-3">
-            <p data-episodios-existentes class="col-span-2 text-xs text-gray-500 dark:text-gray-400" ${textoExistentes ? '' : 'hidden'}>${textoExistentes}</p>
+            <p data-episodios-existentes class="col-span-2 text-xs text-ink-400" ${textoExistentes ? '' : 'hidden'}>${textoExistentes}</p>
             <div>
                 <label class="block text-xs font-medium mb-1">Temporada</label>
                 <input type="number" data-field="temporada" min="1" value="${escapeHtml(r.temporada || '')}"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Episódio</label>
                 <input type="number" data-field="episodio" min="1" value="${escapeHtml(r.episodio || '')}"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>
             <div class="col-span-2">
                 <label class="block text-xs font-medium mb-1">Título do episódio (opcional)</label>
                 <input type="text" data-field="episodioTitulo" maxlength="120" value="${escapeHtml(r.episodioTitulo || '')}"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>
             <div class="col-span-2">
                 <label class="block text-xs font-medium mb-1">Duração do episódio</label>
                 <input type="text" data-field="tempo" maxlength="30" placeholder="ex.: 42 min" value="${escapeHtml(r.tempo || '')}"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>
         </div>`;
     }
@@ -456,11 +456,11 @@ window.LogZenFilmes = (function () {
             <div>
                 <label class="block text-xs font-medium mb-1">Título</label>
                 <input type="text" data-field="titulo" required maxlength="120" value="${escapeHtml(rascunho.titulo)}" placeholder="Nome do filme ou série"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Tipo</label>
-                <select data-field="tipo" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                <select data-field="tipo" class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                     <option value="movie" ${!rascunho.tipo || rascunho.tipo === 'movie' ? 'selected' : ''}>Filme</option>
                     <option value="series" ${rascunho.tipo === 'series' ? 'selected' : ''}>Série</option>
                     <option value="show" ${rascunho.tipo === 'show' ? 'selected' : ''}>Show</option>
@@ -470,23 +470,23 @@ window.LogZenFilmes = (function () {
             : `
             <div class="flex gap-3">
                 ${rascunho.poster
-                    ? `<img src="${escapeHtml(rascunho.poster)}" alt="" class="w-16 h-24 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
-                    : `<div class="w-16 h-24 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-film text-xl"></i></div>`}
+                    ? `<img src="${escapeHtml(rascunho.poster)}" alt="" class="w-16 h-24 object-cover rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800">`
+                    : `<div class="w-16 h-24 rounded shrink-0 bg-paper-100 dark:bg-paper-800 flex items-center justify-center text-ink-300"><i aria-hidden="true" class="fa-solid fa-film text-xl"></i></div>`}
                 <div class="min-w-0 flex-1">
-                    <p class="font-semibold truncate">${escapeHtml(rascunho.titulo)}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml([rascunho.ano, rascunho.tempo, rascunho.genero].filter(Boolean).join(' · '))}</p>
-                    ${rascunho.premios ? `<p class="text-xs text-amber-600 dark:text-amber-400 mt-1"><i aria-hidden="true" class="fa-solid fa-trophy mr-1"></i>${escapeHtml(rascunho.premios)}</p>` : ''}
+                    <p class="font-medium truncate">${escapeHtml(rascunho.titulo)}</p>
+                    <p class="text-xs text-ink-400">${escapeHtml([rascunho.ano, rascunho.tempo, rascunho.genero].filter(Boolean).join(' · '))}</p>
+                    ${rascunho.premios ? `<p class="text-xs text-clay-600 dark:text-clay-400 mt-1"><i aria-hidden="true" class="fa-solid fa-trophy mr-1"></i>${escapeHtml(rascunho.premios)}</p>` : ''}
                 </div>
             </div>`;
         return `
-        <form data-form-rascunho class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+        <form data-form-rascunho class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-4 space-y-3">
             ${cabecalho}
             ${renderEpisodioCampos(rascunho)}
             ${renderLocalCampos(rascunho)}
             <div>
                 <label class="block text-xs font-medium mb-1">Assistido em</label>
                 <input type="date" data-field="assistidoEm" value="${rascunho.assistidoEm}" max="${hoje}"
-                    class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    class="px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Minhas estrelas</label>
@@ -495,11 +495,11 @@ window.LogZenFilmes = (function () {
             <div>
                 <label class="block text-xs font-medium mb-1">Minha opinião</label>
                 <textarea data-field="opiniao" rows="3" maxlength="500" placeholder="O que achou?"
-                    class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(rascunho.opiniao || '')}</textarea>
+                    class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${escapeHtml(rascunho.opiniao || '')}</textarea>
             </div>
             <div class="flex items-center gap-2">
-                <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">${editandoId ? 'Salvar alterações' : 'Salvar'}</button>
-                <button type="button" data-action="cancelar-rascunho" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-3 py-1.5 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-sm font-medium hover:bg-sage-700">${editandoId ? 'Salvar alterações' : 'Salvar'}</button>
+                <button type="button" data-action="cancelar-rascunho" class="px-3 py-1.5 rounded-xl border border-paper-300 dark:border-paper-700 text-sm hover:bg-paper-100 dark:hover:bg-paper-700">Cancelar</button>
             </div>
         </form>`;
     }
@@ -511,24 +511,24 @@ window.LogZenFilmes = (function () {
             || (habilitadas.omdb && window.LogZenFilmes.getApiKey())
             || habilitadas.tvmaze;
         return `
-        <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 space-y-3">
-            <button type="button" data-action="toggle-add-filme" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
+        <div class="rounded-2xl border border-dashed border-paper-300 dark:border-paper-700 p-4 space-y-3">
+            <button type="button" data-action="toggle-add-filme" class="text-sm font-medium text-sage-700 dark:text-sage-400 hover:underline flex items-center gap-1">
                 <i aria-hidden="true" class="fa-solid fa-plus"></i> Registrar vídeo
             </button>
             <div data-add-filme-body hidden class="space-y-3">
                 <form data-form-busca class="flex items-center gap-2">
                     <input type="text" data-field="busca" placeholder="Título do filme/série/show, ou cole um link do YouTube…"
-                        class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                    <button type="submit" class="px-3 py-2 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700 shrink-0">Buscar</button>
+                        class="flex-1 px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    <button type="submit" class="px-3 py-2 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-sm font-medium hover:bg-sage-700 shrink-0">Buscar</button>
                 </form>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
+                <p class="text-xs text-ink-400">
                     ${algumaFonteAtiva
                         ? 'Busca por título nas fontes habilitadas (Configurações → Vídeos), ou cole um link do YouTube para trazer os dados direto de lá (sem precisar de chave).'
                         : 'Nenhuma fonte de busca habilitada/configurada — configure em Configurações → Vídeos, cole um link do YouTube (funciona sem chave), ou registre manualmente abaixo.'}
                 </p>
-                <p data-busca-status class="text-xs text-gray-500 dark:text-gray-400 hidden"></p>
+                <p data-busca-status class="text-xs text-ink-400 hidden"></p>
                 <div data-resultados-busca class="space-y-2"></div>
-                <button type="button" data-action="adicionar-manual" class="text-xs font-medium text-brand-700 dark:text-accent-400 hover:underline">
+                <button type="button" data-action="adicionar-manual" class="text-xs font-medium text-sage-700 dark:text-sage-400 hover:underline">
                     Ou adicionar sem buscar
                 </button>
             </div>
@@ -537,8 +537,8 @@ window.LogZenFilmes = (function () {
 
     function renderEntrada(e) {
         const poster = e.poster
-            ? `<img src="${escapeHtml(e.poster)}" alt="" class="w-14 h-20 object-cover rounded shrink-0 bg-gray-100 dark:bg-gray-700">`
-            : `<div class="w-14 h-20 rounded shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i aria-hidden="true" class="fa-solid fa-film"></i></div>`;
+            ? `<img src="${escapeHtml(e.poster)}" alt="" class="w-14 h-20 object-cover rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800">`
+            : `<div class="w-14 h-20 rounded shrink-0 bg-paper-100 dark:bg-paper-800 flex items-center justify-center text-ink-300"><i aria-hidden="true" class="fa-solid fa-film"></i></div>`;
         const localTexto = e.local
             ? (LOCAL_LABEL[e.local] || e.local) + (e.local === 'streaming' && e.servico ? ` (${e.servico})` : '')
             : '';
@@ -547,30 +547,30 @@ window.LogZenFilmes = (function () {
             ? `T${e.temporada || '?'}E${e.episodio || '?'}${e.episodioTitulo ? ': ' + e.episodioTitulo : ''}${e.tempo ? ' · ' + e.tempo : ''}`
             : '';
         const estrelas = Array.from({ length: 10 }, (_, i) => i + 1)
-            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} text-xs"></i>`).join('');
+            .map((n) => `<i aria-hidden="true" class="fa-solid fa-star ${n <= e.estrelas ? 'text-clay-600 dark:text-clay-400' : 'text-paper-300 dark:text-paper-700'} text-xs"></i>`).join('');
         const dataFmt = new Date(e.assistidoEm + 'T00:00:00').toLocaleDateString('pt-BR');
         return `
-        <div data-filme-entrada data-id="${e.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex gap-3">
+        <div data-filme-entrada data-id="${e.id}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-3 flex gap-3">
             ${poster}
             <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
-                        <p class="font-semibold truncate">${escapeHtml(e.titulo)}</p>
-                        ${episodioTexto ? `<p class="text-xs font-medium text-brand-700 dark:text-accent-400 truncate">${escapeHtml(episodioTexto)}</p>` : ''}
-                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)} · assistido em ${dataFmt}</p>
+                        <p class="font-medium truncate">${escapeHtml(e.titulo)}</p>
+                        ${episodioTexto ? `<p class="text-xs font-medium text-sage-700 dark:text-sage-400 truncate">${escapeHtml(episodioTexto)}</p>` : ''}
+                        <p class="text-xs text-ink-400 truncate">${escapeHtml(detalhes)} · assistido em ${dataFmt}</p>
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
                         <button type="button" data-action="editar-filme" aria-label="Editar ${escapeHtml(e.titulo)}"
-                            class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                            class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                             <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
                         </button>
                         <button type="button" data-action="remover-filme" aria-label="Remover ${escapeHtml(e.titulo)}"
-                            class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                            class="w-7 h-7 rounded-full text-ink-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
                             <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
                         </button>
                     </div>
                 </div>
-                ${e.premios ? `<p class="text-xs text-amber-600 dark:text-amber-400 mt-1"><i aria-hidden="true" class="fa-solid fa-trophy mr-1"></i>${escapeHtml(e.premios)}</p>` : ''}
+                ${e.premios ? `<p class="text-xs text-clay-600 dark:text-clay-400 mt-1"><i aria-hidden="true" class="fa-solid fa-trophy mr-1"></i>${escapeHtml(e.premios)}</p>` : ''}
                 <div class="mt-1">${estrelas}</div>
                 ${e.opiniao ? `<p class="text-sm mt-1">${escapeHtml(e.opiniao)}</p>` : ''}
             </div>
@@ -582,7 +582,7 @@ window.LogZenFilmes = (function () {
         const entradas = window.LogZenFilmes.listar();
         const listaHtml = entradas.length
             ? entradas.map(renderEntrada).join('')
-            : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhum vídeo registrado ainda.</p>';
+            : '<p class="text-xs text-ink-400">Nenhum vídeo registrado ainda.</p>';
         root.innerHTML = renderPainelAdicionar() + `<div data-filmes-lista class="space-y-3">${listaHtml}</div>`;
     }
 
@@ -675,9 +675,10 @@ window.LogZenFilmes = (function () {
                     const bn = parseInt(b.dataset.n, 10);
                     const ativo = bn <= rascunho.estrelas;
                     b.setAttribute('aria-pressed', ativo);
-                    b.classList.toggle('text-amber-400', ativo);
-                    b.classList.toggle('text-gray-300', !ativo);
-                    b.classList.toggle('dark:text-gray-600', !ativo);
+                    b.classList.toggle('text-clay-600', ativo);
+                    b.classList.toggle('dark:text-clay-400', ativo);
+                    b.classList.toggle('text-paper-300', !ativo);
+                    b.classList.toggle('dark:text-paper-700', !ativo);
                 });
                 return;
             }

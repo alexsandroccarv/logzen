@@ -89,24 +89,24 @@
         </div>
 
         <!-- Abas de navegação: adicione/remova .tab-btn e o .tab-panel correspondente -->
-        <nav class="bg-white dark:bg-gray-800 border-t border-brand-700/20 dark:border-gray-700 px-2" role="tablist" aria-label="Seções">
+        <nav class="bg-paper-50 dark:bg-paper-700 border-t border-paper-200 dark:border-paper-800 px-2" role="tablist" aria-label="Seções">
             <div class="max-w-5xl mx-auto flex gap-1 overflow-x-auto">
-                <button id="tab-hoje-btn" aria-controls="tab-hoje" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="true" data-tab="hoje">
+                <button id="tab-hoje-btn" aria-controls="tab-hoje" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-ink-400 hover:text-sage-700 dark:hover:text-sage-400 whitespace-nowrap" role="tab" aria-selected="true" data-tab="hoje">
                     <i aria-hidden="true" class="fa-solid fa-calendar-day mr-1"></i> Hoje
                 </button>
-                <button id="tab-backlog-btn" aria-controls="tab-backlog" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="backlog">
+                <button id="tab-backlog-btn" aria-controls="tab-backlog" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-ink-400 hover:text-sage-700 dark:hover:text-sage-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="backlog">
                     <i aria-hidden="true" class="fa-solid fa-list-check mr-1"></i> Backlog
                 </button>
-                <button id="tab-entregas-btn" aria-controls="tab-entregas" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="entregas">
+                <button id="tab-entregas-btn" aria-controls="tab-entregas" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-ink-400 hover:text-sage-700 dark:hover:text-sage-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="entregas">
                     <i aria-hidden="true" class="fa-solid fa-truck-fast mr-1"></i> Entregas
                 </button>
-                <button id="tab-filmes-btn" aria-controls="tab-filmes" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="filmes">
+                <button id="tab-filmes-btn" aria-controls="tab-filmes" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-ink-400 hover:text-sage-700 dark:hover:text-sage-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="filmes">
                     <i aria-hidden="true" class="fa-solid fa-film mr-1"></i> Vídeos
                 </button>
-                <button id="tab-livros-btn" aria-controls="tab-livros" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="livros">
+                <button id="tab-livros-btn" aria-controls="tab-livros" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-ink-400 hover:text-sage-700 dark:hover:text-sage-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="livros">
                     <i aria-hidden="true" class="fa-solid fa-book mr-1"></i> Livros
                 </button>
-                <button id="tab-podcasts-btn" aria-controls="tab-podcasts" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-accent-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="podcasts">
+                <button id="tab-podcasts-btn" aria-controls="tab-podcasts" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-ink-400 hover:text-sage-700 dark:hover:text-sage-400 whitespace-nowrap" role="tab" aria-selected="false" data-tab="podcasts">
                     <i aria-hidden="true" class="fa-solid fa-podcast mr-1"></i> Podcasts
                 </button>
             </div>
@@ -141,8 +141,8 @@
         </div>
         <div id="tab-backlog" class="tab-panel" role="tabpanel" aria-labelledby="tab-backlog-btn" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
-                <h2 class="text-lg font-bold">Backlog</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <h2 class="font-display text-lg font-medium">Backlog</h2>
+                <p class="text-sm text-ink-400">
                     Guarde as coisas para fazer, com projeto, prazo e
                     descrição. Envie uma tarefa para "Objetivos do dia" em
                     Hoje quando for a hora de encará-la (limite de 10 objetivos
@@ -153,8 +153,8 @@
         </div>
         <div id="tab-entregas" class="tab-panel" role="tabpanel" aria-labelledby="tab-entregas-btn" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
-                <h2 class="text-lg font-bold">Entregas</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <h2 class="font-display text-lg font-medium">Entregas</h2>
+                <p class="text-sm text-ink-400">
                     Cadastre o que você comprou e está aguardando a entrega:
                     loja, número de rastreio e previsão — tudo salvo só neste
                     navegador.
@@ -164,8 +164,8 @@
         </div>
         <div id="tab-filmes" class="tab-panel" role="tabpanel" aria-labelledby="tab-filmes-btn" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
-                <h2 class="text-lg font-bold">Vídeos</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <h2 class="font-display text-lg font-medium">Vídeos</h2>
+                <p class="text-sm text-ink-400">
                     Registre filmes, séries, shows e palestras que você assistiu,
                     com suas estrelas e opinião. A busca por título tenta TMDb,
                     OMDb e TVmaze (configure chaves e ordem em Configurações →
@@ -177,8 +177,8 @@
         </div>
         <div id="tab-livros" class="tab-panel" role="tabpanel" aria-labelledby="tab-livros-btn" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
-                <h2 class="text-lg font-bold">Livros</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <h2 class="font-display text-lg font-medium">Livros</h2>
+                <p class="text-sm text-ink-400">
                     Registre os livros que está lendo ou já leu, com suas estrelas e
                     opinião. Busque por título ou ISBN — a busca usa a Google Books
                     API, com a Open Library como segunda fonte quando a primeira não
@@ -191,8 +191,8 @@
         </div>
         <div id="tab-podcasts" class="tab-panel" role="tabpanel" aria-labelledby="tab-podcasts-btn" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
-                <h2 class="text-lg font-bold">Podcasts</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <h2 class="font-display text-lg font-medium">Podcasts</h2>
+                <p class="text-sm text-ink-400">
                     Controle suas assinaturas e os episódios já ouvidos. A busca
                     de assinaturas usa a iTunes Search API — gratuita, sem
                     precisar de chave.
@@ -205,17 +205,17 @@
                 <div>
                     <label for="userNameInput" class="block text-sm font-medium mb-1">Nome:</label>
                     <input id="userNameInput" type="text" placeholder="Digite um nome"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-400">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-ink-900 dark:text-ink-50 focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    <p class="text-xs text-ink-400 mt-1">
                         Aparece no cabeçalho, ao lado do nome do aplicativo.
                     </p>
                 </div>
 
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <i aria-hidden="true" class="fa-solid fa-list-check text-brand-600 dark:text-accent-400"></i> Itens rastreados
+                <div class="pt-4 border-t border-paper-200 dark:border-paper-800">
+                    <h3 class="font-display text-sm font-medium mb-3 flex items-center gap-2">
+                        <i aria-hidden="true" class="fa-solid fa-list-check text-sage-700 dark:text-sage-400"></i> Itens rastreados
                     </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <p class="text-xs text-ink-400 mb-3">
                         Adicione, edite, exclua ou arraste para reordenar qualquer
                         item de cada categoria. Excluir um item não apaga os
                         registros já salvos — ele só deixa de aparecer na tela.
@@ -223,14 +223,14 @@
                     <div id="itensConfigRoot" class="space-y-3"></div>
                 </div>
 
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <i aria-hidden="true" class="fa-solid fa-palette text-brand-600 dark:text-accent-400"></i> Tema
+                <div class="pt-4 border-t border-paper-200 dark:border-paper-800">
+                    <h3 class="font-display text-sm font-medium mb-3 flex items-center gap-2">
+                        <i aria-hidden="true" class="fa-solid fa-palette text-sage-700 dark:text-sage-400"></i> Tema
                     </h3>
                     <div class="space-y-2">
                         <label for="themeSelect" class="block text-sm">Escolha um tema</label>
                         <select id="themeSelect"
-                            class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-400">
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-ink-900 dark:text-ink-50 focus:outline-none focus:ring-2 focus:ring-sage-400">
                             <option value="padrao" style="font-family:system-ui,sans-serif">Padrão (segue o sistema)</option>
                             <option value="dracula" style="font-family:'Fira Sans',system-ui,sans-serif">Dracula</option>
                             <option value="solarized-dark" style="font-family:'Source Sans 3',system-ui,sans-serif">Solarized Dark</option>
@@ -249,18 +249,18 @@
                             <option value="everforest" style="font-family:'Cabin',system-ui,sans-serif">Everforest</option>
                             <option value="material" style="font-family:'Roboto',system-ui,sans-serif">Material</option>
                         </select>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                        <p class="text-xs text-ink-400">
                             O tema é aplicado a todo o site e fica salvo no seu navegador.
                             "Padrão" segue o modo claro/escuro do sistema.
                         </p>
                     </div>
                 </div>
 
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <i aria-hidden="true" class="fa-solid fa-film text-brand-600 dark:text-accent-400"></i> Vídeos
+                <div class="pt-4 border-t border-paper-200 dark:border-paper-800">
+                    <h3 class="font-display text-sm font-medium mb-3 flex items-center gap-2">
+                        <i aria-hidden="true" class="fa-solid fa-film text-sage-700 dark:text-sage-400"></i> Vídeos
                     </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <p class="text-xs text-ink-400 mb-3">
                         A busca por título tenta as fontes abaixo, na ordem definida, até
                         achar um resultado. Habilite/desabilite e reordene com as setas;
                         TVmaze não exige chave (só cobre séries).
@@ -268,62 +268,62 @@
                     <div id="fontesVideosLista" class="space-y-2 mb-4"></div>
                     <label for="tmdbApiKeyInput" class="block text-xs font-medium mb-1">Chave da TMDb API</label>
                     <input id="tmdbApiKeyInput" type="text" placeholder="ex.: a1b2c3d4e5f6…" autocomplete="off"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    <p class="text-xs text-ink-400 mt-1 mb-3">
                         Crie gratuitamente em
-                        <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener" class="text-brand-600 dark:text-accent-400 hover:underline">themoviedb.org/settings/api</a>.
+                        <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener" class="text-sage-700 dark:text-sage-400 hover:underline">themoviedb.org/settings/api</a>.
                         Fica só neste navegador.
                     </p>
                     <label for="omdbApiKeyInput" class="block text-xs font-medium mb-1">Chave da OMDb API</label>
                     <input id="omdbApiKeyInput" type="text" placeholder="ex.: a1b2c3d4" autocomplete="off"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    <p class="text-xs text-ink-400 mt-1">
                         Crie gratuitamente em
-                        <a href="https://www.omdbapi.com/apikey.aspx" target="_blank" rel="noopener" class="text-brand-600 dark:text-accent-400 hover:underline">omdbapi.com/apikey.aspx</a>.
+                        <a href="https://www.omdbapi.com/apikey.aspx" target="_blank" rel="noopener" class="text-sage-700 dark:text-sage-400 hover:underline">omdbapi.com/apikey.aspx</a>.
                         Fica só neste navegador — sem ela, o registro manual
                         continua funcionando.
                     </p>
                 </div>
 
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <i aria-hidden="true" class="fa-solid fa-book text-brand-600 dark:text-accent-400"></i> Livros
+                <div class="pt-4 border-t border-paper-200 dark:border-paper-800">
+                    <h3 class="font-display text-sm font-medium mb-3 flex items-center gap-2">
+                        <i aria-hidden="true" class="fa-solid fa-book text-sage-700 dark:text-sage-400"></i> Livros
                     </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <p class="text-xs text-ink-400 mb-3">
                         A busca em Livros funciona sem chave, mas a cota anônima
                         da Google Books é compartilhada por IP/rede e pode se
                         esgotar. Para ter sua própria cota, cole aqui uma chave
                         gratuita da
-                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-brand-600 dark:text-accent-400 hover:underline">Google Books API</a>.
+                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-sage-700 dark:text-sage-400 hover:underline">Google Books API</a>.
                         Fica só neste navegador — sem ela, a busca continua
                         funcionando normalmente (só sujeita à cota anônima).
                     </p>
                     <label for="googleBooksApiKeyInput" class="block text-xs font-medium mb-1">Chave da Google Books API (opcional)</label>
                     <input id="googleBooksApiKeyInput" type="text" placeholder="ex.: AIzaSy…" autocomplete="off"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
 
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <i aria-hidden="true" class="fa-solid fa-database text-brand-600 dark:text-accent-400"></i> Salvar/backup
+                <div class="pt-4 border-t border-paper-200 dark:border-paper-800">
+                    <h3 class="font-display text-sm font-medium mb-3 flex items-center gap-2">
+                        <i aria-hidden="true" class="fa-solid fa-database text-sage-700 dark:text-sage-400"></i> Salvar/backup
                     </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <p class="text-xs text-ink-400 mb-3">
                         Seus registros ficam só neste navegador (nenhum servidor recebe
                         nada). Exporte um backup em JSON de vez em quando, ou para levar
                         seus dados para outro aparelho/navegador.
                     </p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="logzenExportBtn"
-                            class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium flex items-center gap-2">
+                            class="px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 hover:bg-paper-100 dark:hover:bg-paper-700 text-sm font-medium flex items-center gap-2">
                             <i aria-hidden="true" class="fa-solid fa-download"></i> Exportar dados (JSON)
                         </button>
                         <label for="logzenImportInput"
-                            class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium flex items-center gap-2 cursor-pointer">
+                            class="px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 hover:bg-paper-100 dark:hover:bg-paper-700 text-sm font-medium flex items-center gap-2 cursor-pointer">
                             <i aria-hidden="true" class="fa-solid fa-upload"></i> Importar dados (JSON)
                         </label>
                         <input type="file" id="logzenImportInput" accept="application/json" class="sr-only">
                     </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p class="text-xs text-ink-400 mt-2">
                         Importar substitui os dados salvos neste navegador pelos do
                         arquivo escolhido.
                     </p>

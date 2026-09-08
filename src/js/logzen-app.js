@@ -9,11 +9,13 @@
    semáforo vermelho/amarelo/verde, tipografia mais leve (Fraunces nos
    títulos, Karla no resto), categorias como cartões suaves — recolhidas
    por padrão (só a 1ª aberta), em colunas no computador (largura ≥ lg).
-   "Objetivos do dia" e "Metas" ficam em destaque no topo (o primeiro à
-   esquerda, as metas empilhadas à direita); "Como foi meu dia" fecha a
-   tela. Metas (valor-alvo + prazo, só para contador/contador-inverso) são
-   definidas/editadas em Itens rastreados — a tela "Hoje" só mostra o
-   progresso.
+   "Objetivos do dia" e "Metas" ficam em destaque no topo, Metas em linha
+   logo abaixo dos Objetivos (issue #34); "Como foi meu dia" fecha a tela.
+   Metas são definidas/editadas em Itens rastreados — a tela "Hoje" só
+   mostra o progresso: valor-alvo + prazo para contador (recorde) e
+   contador-inverso (streak — issue #33), ou valor-alvo + período
+   (semana/mês) para checkbox (ocorrência, ex.: "yoga 2x por semana" —
+   issue #35).
    ========================================================================== */
 (function () {
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
@@ -28,20 +30,28 @@
     ];
     const corVicio = (v) => CORES_VICIO[v <= 0 ? 0 : (v <= 2 ? 1 : 2)];
 
-    // Progresso de uma meta (issue #33): "contador" mira o maior valor já
-    // registrado (bater um recorde); "contador-inverso" mira dias seguidos
-    // sem o hábito (reaproveita o streak que já existia). Sem meta, ou tipo
-    // sem suporte, retorna null (nada a mostrar).
+    // Progresso de uma meta: "contador" mira o maior valor já registrado
+    // (bater um recorde — issue #33); "contador-inverso" mira dias seguidos
+    // sem o hábito (reaproveita o streak que já existia — issue #33);
+    // "checkbox" mira quantas vezes o item foi marcado dentro do período
+    // corrente, semana ou mês (meta de ocorrência, ex.: "yoga 2x por
+    // semana" — issue #35), reiniciando sozinha a cada período novo. Sem
+    // meta, ou tipo sem suporte, retorna null (nada a mostrar).
     function progressoMeta(cat, item, dateKey) {
         if (!item.meta) return null;
-        const atual = item.tipo === 'contador-inverso'
-            ? window.LogZenData.streakZerado(cat.id, item.id, dateKey)
-            : item.tipo === 'contador'
-                ? window.LogZenData.getMelhorValor(cat.id, item.id)
-                : null;
-        if (atual === null) return null;
-        const alvo = item.meta.valor;
-        return { atual, alvo, bateu: atual >= alvo, prazo: item.meta.prazo || '' };
+        if (item.tipo === 'contador-inverso') {
+            const atual = window.LogZenData.streakZerado(cat.id, item.id, dateKey);
+            return { tipo: 'streak', atual, alvo: item.meta.valor, bateu: atual >= item.meta.valor, prazo: item.meta.prazo || '' };
+        }
+        if (item.tipo === 'contador') {
+            const atual = window.LogZenData.getMelhorValor(cat.id, item.id);
+            return { tipo: 'recorde', atual, alvo: item.meta.valor, bateu: atual >= item.meta.valor, prazo: item.meta.prazo || '' };
+        }
+        if (item.tipo === 'checkbox' && item.meta.periodo) {
+            const atual = window.LogZenData.contarOcorrencias(cat.id, item.id, dateKey, item.meta.periodo);
+            return { tipo: 'ocorrencia', atual, alvo: item.meta.valor, bateu: atual >= item.meta.valor, periodo: item.meta.periodo };
+        }
+        return null;
     }
 
     function formatarPrazo(prazo) {
@@ -49,15 +59,25 @@
         return new Date(prazo + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
     }
 
-    // Linha discreta sob um item com meta ativa (contador/contador-inverso).
-    // Só exibe o progresso — editar acontece em Itens rastreados.
+    const PERIODO_LABEL = { semana: 'semana', mes: 'mês' };
+
+    // Linha discreta sob um item com meta ativa (contador/contador-inverso/
+    // checkbox). Só exibe o progresso — editar acontece em Itens rastreados.
     function metaStatusHtml(cat, item, dateKey) {
         const p = progressoMeta(cat, item, dateKey);
         if (!p) return '';
-        const unidade = item.tipo === 'contador-inverso' ? ' dias seguidos' : '';
-        const texto = p.bateu
-            ? `Meta batida: ${p.alvo}${unidade}`
-            : `Meta: ${p.atual} de ${p.alvo}${unidade}${p.prazo ? ` · até ${formatarPrazo(p.prazo)}` : ''}`;
+        let texto;
+        if (p.tipo === 'ocorrencia') {
+            const periodo = PERIODO_LABEL[p.periodo] || p.periodo;
+            texto = p.bateu
+                ? `Meta batida: ${p.alvo}x por ${periodo}`
+                : `Meta: ${p.atual} de ${p.alvo}x essa ${periodo}`;
+        } else {
+            const unidade = p.tipo === 'streak' ? ' dias seguidos' : '';
+            texto = p.bateu
+                ? `Meta batida: ${p.alvo}${unidade}`
+                : `Meta: ${p.atual} de ${p.alvo}${unidade}${p.prazo ? ` · até ${formatarPrazo(p.prazo)}` : ''}`;
+        }
         return `<p data-meta-status class="text-xs ${p.bateu ? 'text-sage-700 dark:text-sage-400' : 'text-anil-600 dark:text-anil-400'} flex items-center gap-1.5 mt-1.5">
             <i aria-hidden="true" class="fa-solid ${p.bateu ? 'fa-circle-check' : 'fa-bullseye'} text-[10px]"></i>${escapeHtml(texto)}
         </p>`;
@@ -170,6 +190,7 @@
                 </label>
                 ${notaBtn(item, temNota)}
             </div>
+            ${metaStatusHtml(cat, item, dateKey)}
             ${notaBox(cat, item, dateKey)}
         </div>`;
     }
@@ -449,8 +470,17 @@
     // sempre em Itens rastreados; aqui só mostra o progresso, empilhado ao
     // lado de Objetivos do dia (ver render()).
     function renderMetaCard(cat, item, p) {
-        const unidade = item.tipo === 'contador-inverso' ? ' dias seguidos' : '';
         const pct = p.alvo > 0 ? Math.max(4, Math.min(100, Math.round((p.atual / p.alvo) * 100))) : 0;
+        let sufixo, rodape;
+        if (p.tipo === 'ocorrencia') {
+            const periodo = PERIODO_LABEL[p.periodo] || p.periodo;
+            sufixo = `de ${p.alvo}x por ${periodo}`;
+            rodape = p.bateu ? 'Editável em Itens rastreados' : `renova toda ${periodo}`;
+        } else {
+            const unidade = p.tipo === 'streak' ? ' dias seguidos' : '';
+            sufixo = `de ${p.alvo}${unidade}`;
+            rodape = p.bateu ? 'Editável em Itens rastreados' : (p.prazo ? `até ${formatarPrazo(p.prazo)}` : 'sem prazo definido');
+        }
         return `
         <div class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-4">
             <div class="flex items-center gap-2 text-xs text-ink-400 mb-2">
@@ -459,12 +489,12 @@
                     : `<i aria-hidden="true" class="fa-solid fa-bullseye text-anil-600 dark:text-anil-400"></i><span>Meta · ${escapeHtml(item.nome)}</span>`}
             </div>
             <div class="flex items-baseline gap-1.5 mb-2">
-                <b class="font-display text-xl font-semibold">${p.atual}</b><span class="text-xs text-ink-400">de ${p.alvo}${unidade}</span>
+                <b class="font-display text-xl font-semibold">${p.atual}</b><span class="text-xs text-ink-400">${sufixo}</span>
             </div>
             <div class="h-1.5 rounded-full bg-paper-200 dark:bg-paper-900 overflow-hidden">
                 <div class="h-full rounded-full ${p.bateu ? 'bg-sage-600' : 'bg-anil-600'}" style="width:${pct}%"></div>
             </div>
-            <p class="text-xs text-ink-300 mt-2">${p.bateu ? 'Editável em Itens rastreados' : (p.prazo ? `até ${formatarPrazo(p.prazo)}` : 'sem prazo definido')}</p>
+            <p class="text-xs text-ink-300 mt-2">${rodape}</p>
         </div>`;
     }
 
@@ -483,7 +513,9 @@
                 Defina metas com prazo para um item em Configurações → Itens rastreados.
             </div>`;
         }
-        return `<div class="flex flex-col gap-3">${cards.join('')}</div>`;
+        // Em linha (não empilhado) abaixo dos Objetivos — evita que uma
+        // coluna vertical de metas fique mais alta que o resto da tela.
+        return `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">${cards.join('')}</div>`;
     }
 
     // Mantém o contador "(N/limite)" e a mensagem/formulário de limite
@@ -514,10 +546,8 @@
         if (dateKey === window.LogZenData.todayKey()) window.LogZenData.migrarObjetivosPendentes(dateKey);
         const categorias = window.LogZenCatalog.getCategorias();
         root.innerHTML = `
-            <div class="grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-4 items-start">
-                ${renderObjetivos(dateKey)}
-                <div data-metas-col>${renderMetas(dateKey)}</div>
-            </div>
+            ${renderObjetivos(dateKey)}
+            <div data-metas-col>${renderMetas(dateKey)}</div>
             <div class="columns-1 lg:columns-2 xl:columns-3 gap-4">
                 ${categorias.map((cat, i) => renderCategoria(cat, dateKey, i === 0)).join('')}
             </div>
@@ -741,6 +771,7 @@
             const row = e.target.closest('[data-row][data-tipo="checkbox"]');
             if (row && e.target.dataset.action === 'checkbox') {
                 window.LogZenData.setItemValue(dataAtual, row.dataset.cat, row.dataset.item, e.target.checked);
+                atualizarMetaUI(root, dataAtual, row.dataset.cat, row.dataset.item, row);
                 return;
             }
 
@@ -878,11 +909,14 @@
     // Definir/editar/remover só acontece aqui; a tela "Hoje" só mostra o
     // progresso (nunca oferece editar a meta por lá).
     function metaConfigHtml(cat, item) {
-        if (item.tipo !== 'contador' && item.tipo !== 'contador-inverso') return '';
+        const ocorrencia = item.tipo === 'checkbox';
+        if (item.tipo !== 'contador' && item.tipo !== 'contador-inverso' && !ocorrencia) return '';
         const meta = item.meta;
         const unidade = item.tipo === 'contador-inverso' ? ' dias seguidos' : '';
         const resumo = meta
-            ? `${meta.valor}${unidade}${meta.prazo ? ` · até ${escapeHtml(new Date(meta.prazo + 'T00:00:00').toLocaleDateString('pt-BR'))}` : ''}`
+            ? (ocorrencia
+                ? `${meta.valor}x por ${PERIODO_LABEL[meta.periodo] || meta.periodo}`
+                : `${meta.valor}${unidade}${meta.prazo ? ` · até ${escapeHtml(new Date(meta.prazo + 'T00:00:00').toLocaleDateString('pt-BR'))}` : ''}`)
             : '';
         return `
         <div data-meta-row class="pb-3 -mt-1">
@@ -904,15 +938,23 @@
             </div>
             <form data-meta-form data-cat="${cat.id}" data-item="${item.id}" hidden class="flex flex-wrap items-end gap-2 pt-2">
                 <div>
-                    <label class="block text-xs font-medium mb-1">Valor-alvo${unidade ? ' (dias)' : ''}</label>
+                    <label class="block text-xs font-medium mb-1">${ocorrencia ? 'Quantas vezes' : `Valor-alvo${unidade ? ' (dias)' : ''}`}</label>
                     <input type="number" data-field="valor" min="1" step="1" required value="${meta ? meta.valor : ''}"
                         class="w-24 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
                 </div>
+                ${ocorrencia ? `
+                <div>
+                    <label class="block text-xs font-medium mb-1">Por</label>
+                    <select data-field="periodo" class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        <option value="semana" ${!meta || meta.periodo !== 'mes' ? 'selected' : ''}>semana</option>
+                        <option value="mes" ${meta && meta.periodo === 'mes' ? 'selected' : ''}>mês</option>
+                    </select>
+                </div>` : `
                 <div>
                     <label class="block text-xs font-medium mb-1">Prazo (opcional)</label>
                     <input type="date" data-field="prazo" value="${meta ? meta.prazo || '' : ''}"
                         class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                </div>
+                </div>`}
                 <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">Salvar</button>
                 <button type="button" data-action="cancel-meta-form" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
             </form>
@@ -1180,8 +1222,11 @@
                 e.preventDefault();
                 const valor = parseInt(metaForm.querySelector('[data-field="valor"]').value, 10);
                 if (!valor || valor < 1) return;
-                const prazo = metaForm.querySelector('[data-field="prazo"]').value;
-                window.LogZenCatalog.setMeta(metaForm.dataset.cat, metaForm.dataset.item, { valor, prazo });
+                const periodoEl = metaForm.querySelector('[data-field="periodo"]');
+                const dados = periodoEl
+                    ? { valor, periodo: periodoEl.value }
+                    : { valor, prazo: metaForm.querySelector('[data-field="prazo"]').value };
+                window.LogZenCatalog.setMeta(metaForm.dataset.cat, metaForm.dataset.item, dados);
                 renderItensConfig();
                 sincronizarHoje();
                 return;
