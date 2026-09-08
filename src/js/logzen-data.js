@@ -90,6 +90,36 @@ window.LogZenData = (function () {
         return melhor;
     }
 
+    // Início do período (semana começando na segunda-feira, ou mês
+    // calendário) que contém `dateKey` — usado pelas metas de ocorrência
+    // (issue #35), ex.: "yoga 2x por semana".
+    function inicioPeriodo(periodo, dateKey) {
+        const d = new Date(dateKey + 'T00:00:00');
+        if (periodo === 'mes') return new Date(d.getFullYear(), d.getMonth(), 1);
+        const diaSemana = (d.getDay() + 6) % 7; // 0 = segunda … 6 = domingo
+        d.setDate(d.getDate() - diaSemana);
+        return d;
+    }
+
+    // Quantos dias, dentro do período (semana ou mês) que contém
+    // `dateKey`, o item teve algum valor "truthy" registrado — usado pelas
+    // metas de ocorrência (issue #35) em itens do tipo checkbox. Reinicia
+    // sozinho a cada novo período, sem precisar de ação manual.
+    function contarOcorrencias(categoriaId, itemId, dateKey, periodo) {
+        const all = readAll();
+        const fim = new Date(dateKey + 'T00:00:00');
+        const cursor = inicioPeriodo(periodo, dateKey);
+        let count = 0;
+        while (cursor <= fim) {
+            const key = todayKey(cursor);
+            const entry = all[key];
+            const v = entry && entry[categoriaId] ? entry[categoriaId][itemId] : undefined;
+            if (v) count += 1;
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        return count;
+    }
+
     function getItemNota(dateKey, categoriaId, itemId) {
         const cat = getEntry(dateKey)[categoriaId];
         return (cat && cat.notas && cat.notas[itemId]) || '';
@@ -190,6 +220,7 @@ window.LogZenData = (function () {
 
     return {
         todayKey, getEntry, getItemValue, setItemValue, toggleTag, streakZerado, getMelhorValor,
+        contarOcorrencias,
         getItemNota, setItemNota, getObjetivos, setObjetivos,
         getObjetivoNota, setObjetivoNota, migrarObjetivosPendentes,
         getNota, setNota, exportJSON, importJSON,

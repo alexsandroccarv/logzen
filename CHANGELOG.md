@@ -32,6 +32,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   salvos (issue #30).
 
 ### Added
+- **Metas de ocorrência** para itens do tipo "checkbox": valor-alvo +
+  período (semana ou mês), ex.: "yoga 2x por semana". O progresso conta
+  quantos dias dentro da semana (segunda a domingo) ou mês corrente o
+  item foi marcado, e reinicia sozinho a cada novo período — definida do
+  mesmo jeito das demais metas, em Configurações → Itens rastreados
+  (issue #35).
 - **Metas** por item: itens do tipo "contador" (bater um recorde, ex.: "60
   abdominais") ou "contador-inverso" (dias seguidos sem o hábito) podem
   ganhar uma meta opcional (valor-alvo + prazo), definida em

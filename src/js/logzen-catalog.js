@@ -298,11 +298,11 @@ window.LogZenCatalog = (function () {
         catch (e) { /* storage indisponível — segue sem persistir */ }
     }
 
-    // Meta opcional (valor-alvo + prazo) por item — issue #33. Só faz
-    // sentido para "contador" (bater um recorde) e "contador-inverso"
-    // (dias seguidos sem o hábito). Editar/remover é feito sempre em
-    // Itens rastreados (Configurações) — a tela "Hoje" só mostra o
-    // progresso, nunca oferece editar a meta por lá.
+    // Meta opcional por item — issue #33 ("contador": bater um recorde;
+    // "contador-inverso": dias seguidos sem o hábito) e issue #35
+    // ("checkbox": meta de ocorrência, ex.: "yoga 2x por semana").
+    // Editar/remover é feito sempre em Itens rastreados (Configurações) —
+    // a tela "Hoje" só mostra o progresso, nunca oferece editar a meta.
     function getMeta(categoriaId, itemId) {
         const metas = readMetas();
         return (metas[categoriaId] && metas[categoriaId][itemId]) || null;
@@ -311,7 +311,12 @@ window.LogZenCatalog = (function () {
     function setMeta(categoriaId, itemId, dados) {
         const metas = readMetas();
         if (!metas[categoriaId]) metas[categoriaId] = {};
-        metas[categoriaId][itemId] = { valor: dados.valor, prazo: dados.prazo || '' };
+        // Meta de ocorrência (issue #35, ex.: "yoga 2x por semana") guarda
+        // `periodo` em vez de `prazo` — os dois tipos de meta são mutuamente
+        // exclusivos (dependem do tipo do item, nunca coexistem).
+        metas[categoriaId][itemId] = dados.periodo
+            ? { valor: dados.valor, periodo: dados.periodo }
+            : { valor: dados.valor, prazo: dados.prazo || '' };
         writeMetas(metas);
     }
 
