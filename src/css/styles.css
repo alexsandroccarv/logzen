@@ -39,12 +39,12 @@ html.high-contrast button {
 /* Ícones da barra de abas (segunda linha do cabeçalho): 50% maiores. */
 .tab-btn i { font-size: 1.5em; vertical-align: -0.1em; }
 .tab-btn[aria-selected="true"] {
-    color: #1d4ed8;
-    border-bottom-color: #1d4ed8;
+    color: #3f6349;
+    border-bottom-color: #3f6349;
 }
 .dark .tab-btn[aria-selected="true"] {
-    color: #60a5fa;
-    border-bottom-color: #60a5fa;
+    color: #8fb596;
+    border-bottom-color: #8fb596;
 }
 .tab-panel[hidden] { display: none; }
 

@@ -14,6 +14,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   "Objetivos do dia" (issue #34).
 
 ### Changed
+- Identidade visual **"Sereno"** estendida para Backlog, Entregas, Vídeos,
+  Livros, Podcasts e Configurações (antes só na tela "Hoje"): cartões
+  arredondados com sombra suave em vez de borda cinza dura, fundo papel,
+  botões e links em sálvia em vez de azul/verde-água, estrelas de
+  avaliação em argila em vez de âmbar. Cabeçalho e rodapé mantêm a
+  identidade de marca atual (fora do escopo) (issue #36).
 - Tela "Hoje": nova identidade visual **"Sereno"** — paleta sálvia/argila/
   anil sobre fundo papel (substitui o esquema vermelho/amarelo/verde),
   tipografia Fraunces + Karla, categorias como cartões arredondados sem

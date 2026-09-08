@@ -107,51 +107,51 @@ window.LogZenEntregas = (function () {
         const editando = editandoId ? window.LogZenEntregas.obter(editandoId) : null;
         const v = editando || { nome: '', dataCompra: hoje, dataPrevisao: '', loja: '', rastreio: '', observacoes: '' };
         const cabecalho = editando
-            ? `<p class="text-sm font-medium text-brand-700 dark:text-accent-400 flex items-center gap-1.5">
+            ? `<p class="text-sm font-medium text-sage-700 dark:text-sage-400 flex items-center gap-1.5">
                    <i aria-hidden="true" class="fa-solid fa-pen"></i> Editando "${escapeHtml(editando.nome)}"
                </p>`
-            : `<button type="button" data-action="toggle-add-entrega" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
+            : `<button type="button" data-action="toggle-add-entrega" class="text-sm font-medium text-sage-700 dark:text-sage-400 hover:underline flex items-center gap-1">
                    <i aria-hidden="true" class="fa-solid fa-plus"></i> Registrar entrega
                </button>`;
         return `
-        <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 space-y-3">
+        <div class="rounded-2xl border border-dashed border-paper-300 dark:border-paper-700 p-4 space-y-3">
             ${cabecalho}
             <form data-form-entrega ${editando ? '' : 'hidden'} class="space-y-3">
                 <div>
                     <label class="block text-xs font-medium mb-1">Nome</label>
                     <input type="text" data-field="nome" required maxlength="150" placeholder="O que você comprou?" value="${escapeHtml(v.nome)}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium mb-1">Data da compra</label>
                         <input type="date" data-field="dataCompra" value="${v.dataCompra || hoje}" max="${hoje}"
-                            class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                     </div>
                     <div>
                         <label class="block text-xs font-medium mb-1">Previsão de entrega</label>
                         <input type="date" data-field="dataPrevisao" value="${v.dataPrevisao || ''}"
-                            class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Loja/e-commerce</label>
                     <input type="text" data-field="loja" maxlength="100" placeholder="ex.: Amazon, Mercado Livre…" value="${escapeHtml(v.loja || '')}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Número de rastreio</label>
                     <input type="text" data-field="rastreio" maxlength="60" placeholder="ex.: BR123456789BR" value="${escapeHtml(v.rastreio || '')}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Observações</label>
                     <textarea data-field="observacoes" rows="2" maxlength="500" placeholder="Opcional"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(v.observacoes || '')}</textarea>
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${escapeHtml(v.observacoes || '')}</textarea>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">${editando ? 'Salvar alterações' : 'Salvar'}</button>
-                    <button type="button" data-action="cancelar-entrega" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-sm font-medium hover:bg-sage-700">${editando ? 'Salvar alterações' : 'Salvar'}</button>
+                    <button type="button" data-action="cancelar-entrega" class="px-3 py-1.5 rounded-xl border border-paper-300 dark:border-paper-700 text-sm hover:bg-paper-100 dark:hover:bg-paper-700">Cancelar</button>
                 </div>
             </form>
         </div>`;
@@ -173,47 +173,47 @@ window.LogZenEntregas = (function () {
         let previsaoHtml = '';
         if (dataValida(e.dataPrevisao)) {
             const atrasada = e.dataPrevisao < hoje;
-            previsaoHtml = `<p class="text-xs font-medium ${atrasada ? 'text-red-600 dark:text-red-400' : 'text-brand-700 dark:text-accent-400'} truncate">
+            previsaoHtml = `<p class="text-xs font-medium ${atrasada ? 'text-red-600 dark:text-red-400' : 'text-sage-700 dark:text-sage-400'} truncate">
                 ${atrasada ? 'Atrasada — previsão era' : 'Previsão de entrega:'} ${escapeHtml(fmtData(e.dataPrevisao))}</p>`;
         }
         const detalhes = [e.loja, e.rastreio].filter(Boolean).join(' · ');
         return `
-        <div data-entrega-entrada data-id="${e.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <div data-entrega-entrada data-id="${e.id}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-3">
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="font-semibold truncate">${escapeHtml(e.nome)}</p>
-                    ${detalhes ? `<p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)}</p>` : ''}
-                    ${dataValida(e.dataCompra) ? `<p class="text-xs text-gray-500 dark:text-gray-400">Comprado em ${escapeHtml(fmtData(e.dataCompra))}</p>` : ''}
+                    <p class="font-medium truncate">${escapeHtml(e.nome)}</p>
+                    ${detalhes ? `<p class="text-xs text-ink-400 truncate">${escapeHtml(detalhes)}</p>` : ''}
+                    ${dataValida(e.dataCompra) ? `<p class="text-xs text-ink-400">Comprado em ${escapeHtml(fmtData(e.dataCompra))}</p>` : ''}
                     ${previsaoHtml}
                     ${e.observacoes ? `<p class="text-sm mt-1">${escapeHtml(e.observacoes)}</p>` : ''}
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
                     <button type="button" data-action="editar-entrega" aria-label="Editar ${escapeHtml(e.nome)}"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
                     </button>
                     <button type="button" data-action="remover-entrega" aria-label="Remover ${escapeHtml(e.nome)}"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
                     </button>
                 </div>
             </div>
-            <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div class="mt-2 pt-2 border-t border-paper-200 dark:border-paper-800">
                 <div class="flex items-center gap-3">
                     <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                        <input type="checkbox" data-action="marcar-entregue" class="rounded border-gray-300 dark:border-gray-600">
+                        <input type="checkbox" data-action="marcar-entregue" class="rounded border-paper-300 dark:border-paper-700 accent-sage-600 dark:accent-sage-400">
                         Entregue
                     </label>
                     <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                        <input type="checkbox" data-action="marcar-nao-entregue" checked class="rounded border-gray-300 dark:border-gray-600">
+                        <input type="checkbox" data-action="marcar-nao-entregue" checked class="rounded border-paper-300 dark:border-paper-700 accent-sage-600 dark:accent-sage-400">
                         Não entregue
                     </label>
                 </div>
                 <div data-confirmar-entrega hidden class="flex items-center gap-2 mt-2">
                     <input type="date" data-field="dataEntrega" value="${hoje}" max="${hoje}"
-                        class="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs focus:outline-none focus:ring-2 focus:ring-brand-400">
-                    <button type="button" data-action="confirmar-entrega" class="px-2 py-1 rounded bg-brand-600 dark:bg-accent-600 text-white text-xs font-semibold hover:bg-brand-700">Confirmar</button>
-                    <button type="button" data-action="cancelar-entregue" class="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+                        class="px-2 py-1 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-xs focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    <button type="button" data-action="confirmar-entrega" class="px-2 py-1 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-xs font-medium hover:bg-sage-700">Confirmar</button>
+                    <button type="button" data-action="cancelar-entregue" class="px-2 py-1 rounded-xl border border-paper-300 dark:border-paper-700 text-xs hover:bg-paper-100 dark:hover:bg-paper-700">Cancelar</button>
                 </div>
             </div>
         </div>`;
@@ -222,25 +222,25 @@ window.LogZenEntregas = (function () {
     function renderArquivada(e) {
         const detalhes = [e.loja, e.rastreio].filter(Boolean).join(' · ');
         return `
-        <div data-entrega-arquivada data-id="${e.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <div data-entrega-arquivada data-id="${e.id}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-3">
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="font-semibold truncate">${escapeHtml(e.nome)}</p>
-                    ${detalhes ? `<p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(detalhes)}</p>` : ''}
-                    ${dataValida(e.dataEntrega) ? `<p class="text-xs font-medium text-green-700 dark:text-green-400">Entregue em ${escapeHtml(fmtData(e.dataEntrega))}</p>` : ''}
+                    <p class="font-medium truncate">${escapeHtml(e.nome)}</p>
+                    ${detalhes ? `<p class="text-xs text-ink-400 truncate">${escapeHtml(detalhes)}</p>` : ''}
+                    ${dataValida(e.dataEntrega) ? `<p class="text-xs font-medium text-sage-700 dark:text-sage-400">Entregue em ${escapeHtml(fmtData(e.dataEntrega))}</p>` : ''}
                     ${e.observacoes ? `<p class="text-sm mt-1">${escapeHtml(e.observacoes)}</p>` : ''}
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
                     <button type="button" data-action="editar-entrega" aria-label="Editar ${escapeHtml(e.nome)}"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
                     </button>
                     <button type="button" data-action="desfazer-entrega" aria-label="Desfazer entrega de ${escapeHtml(e.nome)}" title="Voltar para aguardando entrega"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-rotate-left text-xs"></i>
                     </button>
                     <button type="button" data-action="remover-entrega" aria-label="Remover ${escapeHtml(e.nome)}"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
                     </button>
                 </div>
@@ -254,14 +254,14 @@ window.LogZenEntregas = (function () {
         const arquivadas = window.LogZenEntregas.listarArquivadas();
         const listaHtml = pendentes.length
             ? pendentes.map(renderEntrada).join('')
-            : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhuma entrega aguardando no momento.</p>';
+            : '<p class="text-xs text-ink-400">Nenhuma entrega aguardando no momento.</p>';
         const arquivoHtml = `
-        <details class="rounded-lg border border-gray-200 dark:border-gray-700">
+        <details class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm">
             <summary class="px-3 py-2 text-sm font-medium cursor-pointer select-none">
                 <i aria-hidden="true" class="fa-solid fa-box-archive mr-1"></i> Arquivo (${arquivadas.length} entregue${arquivadas.length === 1 ? '' : 's'})
             </summary>
             <div class="p-3 pt-0 space-y-3">
-                ${arquivadas.length ? arquivadas.map(renderArquivada).join('') : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhuma entrega arquivada ainda.</p>'}
+                ${arquivadas.length ? arquivadas.map(renderArquivada).join('') : '<p class="text-xs text-ink-400">Nenhuma entrega arquivada ainda.</p>'}
             </div>
         </details>`;
         root.innerHTML = renderForm()

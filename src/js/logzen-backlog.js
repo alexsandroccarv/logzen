@@ -125,13 +125,13 @@ window.LogZenBacklog = (function () {
         <div>
             <label class="block text-xs font-medium mb-1">Projeto (opcional)</label>
             <select data-field="projeto"
-                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 <option value="" ${!v.projeto ? 'selected' : ''}>Sem projeto</option>
                 ${projetos.map((p) => `<option value="${escapeHtml(p)}" ${v.projeto === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('')}
                 <option value="__outro__" ${!projetoConhecido ? 'selected' : ''}>Outro (novo projeto)…</option>
             </select>
             <input type="text" data-field="projetoOutro" ${outroHidden} maxlength="80" placeholder="Nome do novo projeto" value="${!projetoConhecido ? escapeHtml(v.projeto) : ''}"
-                class="mt-2 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                class="mt-2 w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
         </div>`;
     }
 
@@ -139,42 +139,42 @@ window.LogZenBacklog = (function () {
         const editando = editandoId ? window.LogZenBacklog.obter(editandoId) : null;
         const v = editando || { projeto: '', acao: '', prazoInicio: '', prazoFim: '', descricao: '' };
         const cabecalho = editando
-            ? `<p class="text-sm font-medium text-brand-700 dark:text-accent-400 flex items-center gap-1.5">
+            ? `<p class="text-sm font-medium text-sage-700 dark:text-sage-400 flex items-center gap-1.5">
                    <i aria-hidden="true" class="fa-solid fa-pen"></i> Editando "${escapeHtml(editando.acao)}"
                </p>`
-            : `<button type="button" data-action="toggle-add-backlog" class="text-sm font-medium text-brand-700 dark:text-accent-400 hover:underline flex items-center gap-1">
+            : `<button type="button" data-action="toggle-add-backlog" class="text-sm font-medium text-sage-700 dark:text-sage-400 hover:underline flex items-center gap-1">
                    <i aria-hidden="true" class="fa-solid fa-plus"></i> Adicionar tarefa
                </button>`;
         return `
-        <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 space-y-3">
+        <div class="rounded-2xl border border-dashed border-paper-300 dark:border-paper-700 p-4 space-y-3">
             ${cabecalho}
             <form data-form-backlog ${editando ? '' : 'hidden'} class="space-y-3">
                 ${renderCampoProjeto(v)}
                 <div>
                     <label class="block text-xs font-medium mb-1">Ação</label>
                     <input type="text" data-field="acao" required maxlength="150" placeholder="O que precisa ser feito?" value="${escapeHtml(v.acao)}"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium mb-1">Prazo início (opcional)</label>
                         <input type="date" data-field="prazoInicio" value="${v.prazoInicio || ''}"
-                            class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                     </div>
                     <div>
                         <label class="block text-xs font-medium mb-1">Prazo fim (opcional)</label>
                         <input type="date" data-field="prazoFim" value="${v.prazoFim || ''}"
-                            class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium mb-1">Descrição (opcional)</label>
                     <textarea data-field="descricao" rows="2" maxlength="500" placeholder="Detalhes, contexto…"
-                        class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">${escapeHtml(v.descricao || '')}</textarea>
+                        class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${escapeHtml(v.descricao || '')}</textarea>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="submit" class="px-3 py-1.5 rounded bg-brand-600 dark:bg-accent-600 text-white text-sm font-semibold hover:bg-brand-700">${editando ? 'Salvar alterações' : 'Salvar'}</button>
-                    <button type="button" data-action="cancelar-backlog" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</button>
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-sm font-medium hover:bg-sage-700">${editando ? 'Salvar alterações' : 'Salvar'}</button>
+                    <button type="button" data-action="cancelar-backlog" class="px-3 py-1.5 rounded-xl border border-paper-300 dark:border-paper-700 text-sm hover:bg-paper-100 dark:hover:bg-paper-700">Cancelar</button>
                 </div>
             </form>
         </div>`;
@@ -192,24 +192,24 @@ window.LogZenBacklog = (function () {
     function renderTarefa(t) {
         const prazo = linhaPrazo(t);
         return `
-        <div data-backlog-tarefa data-id="${t.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <div data-backlog-tarefa data-id="${t.id}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-3">
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="font-semibold truncate">${escapeHtml(t.acao)}</p>
-                    ${prazo ? `<p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(prazo)}</p>` : ''}
+                    <p class="font-medium truncate">${escapeHtml(t.acao)}</p>
+                    ${prazo ? `<p class="text-xs text-ink-400">${escapeHtml(prazo)}</p>` : ''}
                     ${t.descricao ? `<p class="text-sm mt-1">${escapeHtml(t.descricao)}</p>` : ''}
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
                     <button type="button" data-action="enviar-backlog" aria-label="Enviar '${escapeHtml(t.acao)}' para hoje" title="Enviar para Objetivos do dia"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-paper-plane text-xs"></i>
                     </button>
                     <button type="button" data-action="editar-backlog" aria-label="Editar ${escapeHtml(t.acao)}"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
                     </button>
                     <button type="button" data-action="remover-backlog" aria-label="Remover ${escapeHtml(t.acao)}"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
                     </button>
                 </div>
@@ -219,24 +219,24 @@ window.LogZenBacklog = (function () {
 
     function renderEnviada(t) {
         return `
-        <div data-backlog-enviada data-id="${t.id}" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <div data-backlog-enviada data-id="${t.id}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-3">
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="font-semibold truncate">${escapeHtml(t.acao)}</p>
-                    ${dataValida(t.enviadoEm) ? `<p class="text-xs font-medium text-green-700 dark:text-green-400">Enviada para hoje em ${escapeHtml(fmtData(t.enviadoEm))}</p>` : ''}
+                    <p class="font-medium truncate">${escapeHtml(t.acao)}</p>
+                    ${dataValida(t.enviadoEm) ? `<p class="text-xs font-medium text-sage-700 dark:text-sage-400">Enviada para hoje em ${escapeHtml(fmtData(t.enviadoEm))}</p>` : ''}
                     ${t.descricao ? `<p class="text-sm mt-1">${escapeHtml(t.descricao)}</p>` : ''}
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
                     <button type="button" data-action="editar-backlog" aria-label="Editar ${escapeHtml(t.acao)}"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
                     </button>
                     <button type="button" data-action="desfazer-backlog" aria-label="Desfazer envio de ${escapeHtml(t.acao)}" title="Voltar para o backlog"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-accent-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-rotate-left text-xs"></i>
                     </button>
                     <button type="button" data-action="remover-backlog" aria-label="Remover ${escapeHtml(t.acao)}"
-                        class="w-7 h-7 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                        class="w-7 h-7 rounded-full text-ink-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
                         <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
                     </button>
                 </div>
@@ -262,7 +262,7 @@ window.LogZenBacklog = (function () {
     function renderListaAgrupada(lista, renderItemFn) {
         return agruparPorProjeto(lista).map((g) => `
             <div data-grupo-projeto="${escapeHtml(g.projeto)}">
-                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
+                <p class="text-xs font-medium text-ink-400 mb-2 flex items-center gap-1.5">
                     <i aria-hidden="true" class="fa-solid fa-folder"></i> ${g.projeto ? escapeHtml(g.projeto) : 'Sem projeto'}
                 </p>
                 <div class="space-y-3 mb-3">${g.tarefas.map(renderItemFn).join('')}</div>
@@ -275,14 +275,14 @@ window.LogZenBacklog = (function () {
         const enviadas = window.LogZenBacklog.listarEnviados();
         const listaHtml = pendentes.length
             ? renderListaAgrupada(pendentes, renderTarefa)
-            : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhuma tarefa no backlog ainda.</p>';
+            : '<p class="text-xs text-ink-400">Nenhuma tarefa no backlog ainda.</p>';
         const enviadasHtml = `
-        <details class="rounded-lg border border-gray-200 dark:border-gray-700">
+        <details class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm">
             <summary class="px-3 py-2 text-sm font-medium cursor-pointer select-none">
                 <i aria-hidden="true" class="fa-solid fa-paper-plane mr-1"></i> Enviadas (${enviadas.length})
             </summary>
             <div class="p-3 pt-0">
-                ${enviadas.length ? renderListaAgrupada(enviadas, renderEnviada) : '<p class="text-xs text-gray-500 dark:text-gray-400">Nenhuma tarefa enviada ainda.</p>'}
+                ${enviadas.length ? renderListaAgrupada(enviadas, renderEnviada) : '<p class="text-xs text-ink-400">Nenhuma tarefa enviada ainda.</p>'}
             </div>
         </details>`;
         root.innerHTML = renderForm()
