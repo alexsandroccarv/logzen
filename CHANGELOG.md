@@ -18,6 +18,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   "Objetivos do dia" (issue #34).
 
 ### Changed
+- Vídeos: ao escolher a temporada e o episódio de uma série (formulário
+  principal ou formulário rápido do card do show), o LogZen busca
+  automaticamente título e duração do episódio na mesma fonte usada para
+  encontrar a série (TMDb, TVmaze ou OMDb) — continuam editáveis à mão.
+  Séries registradas manualmente (sem busca) não são afetadas (issue #45).
 - Vídeos: Séries agora ficam numa sub-aba separada de Filmes. Cada série
   vira um "card" único (pôster, título, ano, gênero) com a lista completa
   dos episódios já registrados logo abaixo — nome do episódio, duração,

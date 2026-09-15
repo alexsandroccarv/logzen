@@ -32,6 +32,14 @@
    episódio. Cada card ganha um formulário rápido para adicionar mais um
    episódio sem buscar de novo. "Registrar vídeo" (busca/manual) continua
    sendo o caminho para um filme novo ou o primeiro episódio de uma série.
+
+   Busca automática de episódio (issue #45): cada entrada guarda de qual
+   fonte (tmdb/tvmaze/omdb) e de qual id do show ela veio (serieFonte/
+   serieRefId) — ao preencher temporada + episódio, tanto no formulário
+   principal quanto no formulário rápido do card de série, busca título e
+   duração do episódio direto na fonte e preenche os campos (continuam
+   editáveis). Séries manuais (sem busca) não têm fonte conhecida, então
+   nada é buscado — comportamento igual ao de antes.
    ========================================================================== */
 window.LogZenFilmes = (function () {
     const ENTRIES_KEY = 'logzen:filmes:v1';
@@ -125,6 +133,11 @@ window.LogZenFilmes = (function () {
             return {
                 titulo: referencia.titulo, poster: referencia.poster, ano: referencia.ano,
                 genero: referencia.genero, episodios: ordenados,
+                // Fonte/id do show na fonte (issue #45) — de preferência da
+                // própria referência (que já é, de preferência, a que tem
+                // pôster, ou seja, a que veio de busca); permite buscar
+                // título/duração de novos episódios sem repetir a busca.
+                fonte: referencia.serieFonte || '', fonteId: referencia.serieRefId || '',
             };
         }).sort((a, b) => {
             const ua = Math.max(0, ...a.episodios.map((e) => e.criadoEm || 0));
@@ -313,6 +326,53 @@ window.LogZenFilmes = (function () {
         return null;
     }
 
+    // Título e duração de um episódio específico (temporada + número), por
+    // fonte (issue #45) — usado para preencher automaticamente ao escolher
+    // o episódio de uma série já vinda de busca (o id do show na fonte fica
+    // guardado na própria entrada como serieFonte/serieRefId).
+    async function buscarDetalhesEpisodioTmdb(seriesId, temporada, episodio) {
+        const key = getTmdbApiKey();
+        const resp = await fetch(`https://api.themoviedb.org/3/tv/${encodeURIComponent(seriesId)}/season/${encodeURIComponent(temporada)}/episode/${encodeURIComponent(episodio)}?api_key=${encodeURIComponent(key)}&language=pt-BR`);
+        if (!resp.ok) throw new Error('Episódio não encontrado na TMDb.');
+        const d = await resp.json();
+        if (d.success === false) throw new Error(d.status_message || 'Episódio não encontrado na TMDb.');
+        return { episodioTitulo: d.name || '', tempo: d.runtime ? `${d.runtime} min` : '' };
+    }
+
+    async function buscarDetalhesEpisodioTvmaze(showId, temporada, episodio) {
+        const resp = await fetch(`https://api.tvmaze.com/shows/${encodeURIComponent(showId)}/episodebynumber?season=${encodeURIComponent(temporada)}&number=${encodeURIComponent(episodio)}`);
+        if (!resp.ok) throw new Error('Episódio não encontrado na TVmaze.');
+        const d = await resp.json();
+        return { episodioTitulo: d.name || '', tempo: d.runtime ? `${d.runtime} min` : '' };
+    }
+
+    async function buscarDetalhesEpisodioOmdb(imdbID, temporada, episodio) {
+        const key = getApiKey();
+        const resp = await fetch(`https://www.omdbapi.com/?apikey=${encodeURIComponent(key)}&i=${encodeURIComponent(imdbID)}&Season=${encodeURIComponent(temporada)}&Episode=${encodeURIComponent(episodio)}`);
+        if (!resp.ok) throw new Error('Falha ao conectar com a OMDb API.');
+        const d = await resp.json();
+        if (d.Response === 'False') throw new Error(d.Error || 'Episódio não encontrado na OMDb.');
+        return { episodioTitulo: d.Title || '', tempo: d.Runtime && d.Runtime !== 'N/A' ? d.Runtime : '' };
+    }
+
+    // Despacha para a fonte guardada na entrada/grupo (serieFonte/
+    // serieRefId) — null quando a série é manual (sem fonte conhecida) ou
+    // sem chave configurada para essa fonte, e quem chamou decide o que
+    // fazer (não tenta buscar).
+    async function buscarDetalhesEpisodio(fonte, refId, temporada, episodio) {
+        if (!fonte || !refId) return null;
+        if (fonte === 'tmdb') {
+            if (!getTmdbApiKey()) throw new Error('Chave da TMDb não configurada (Configurações → Vídeos).');
+            return buscarDetalhesEpisodioTmdb(refId, temporada, episodio);
+        }
+        if (fonte === 'tvmaze') return buscarDetalhesEpisodioTvmaze(refId, temporada, episodio);
+        if (fonte === 'omdb') {
+            if (!getApiKey()) throw new Error('Chave da OMDb não configurada (Configurações → Vídeos).');
+            return buscarDetalhesEpisodioOmdb(refId, temporada, episodio);
+        }
+        return null;
+    }
+
     // Reconhece um link do YouTube colado no campo de busca (watch/youtu.be/
     // shorts/embed) e devolve o id do vídeo, ou null se não for um link
     // reconhecido.
@@ -334,7 +394,7 @@ window.LogZenFilmes = (function () {
         listar, salvar, remover, obter, atualizar, listarEpisodios, listarGruposSeries, getApiKey, setApiKey,
         getTmdbApiKey, setTmdbApiKey, getFontesOrdem, setFontesOrdem,
         getFontesHabilitadas, setFonteHabilitada,
-        buscarPorTitulo, buscarDetalhesPorResultado, extrairYoutubeId, buscarYoutube,
+        buscarPorTitulo, buscarDetalhesPorResultado, buscarDetalhesEpisodio, extrairYoutubeId, buscarYoutube,
     };
 })();
 
@@ -481,6 +541,7 @@ window.LogZenFilmes = (function () {
                 <input type="number" data-field="episodio" min="1" value="${escapeHtml(r.episodio || '')}"
                     class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
             </div>
+            <p data-busca-episodio-status class="col-span-2 text-xs text-ink-400" hidden></p>
             <div class="col-span-2">
                 <label class="block text-xs font-medium mb-1">Título do episódio (opcional)</label>
                 <input type="text" data-field="episodioTitulo" maxlength="120" value="${escapeHtml(r.episodioTitulo || '')}"
@@ -704,6 +765,7 @@ window.LogZenFilmes = (function () {
                         <input type="number" data-field="episodio" min="1" required
                             class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
                     </div>
+                    <p data-busca-episodio-status class="col-span-2 text-xs text-ink-400" hidden></p>
                     <div class="col-span-2">
                         <label class="block text-xs font-medium mb-1">Título do episódio (opcional)</label>
                         <input type="text" data-field="episodioTitulo" maxlength="120"
@@ -770,6 +832,32 @@ window.LogZenFilmes = (function () {
             + (subTab === 'series' ? renderSeriesSecao() : renderFilmesSecao());
     }
 
+    // Busca automaticamente título e duração do episódio (issue #45) assim
+    // que temporada + episódio estão preenchidos, desde que a série tenha
+    // uma fonte conhecida (fonte/refId — veio de busca, não é manual). Não
+    // trava o formulário em caso de erro (sem chave, episódio não achado,
+    // falha de rede): só mostra o aviso, os campos continuam editáveis.
+    async function tentarBuscarEpisodio(form, fonte, refId) {
+        if (!fonte || !refId) return;
+        const temporada = (form.querySelector('[data-field="temporada"]') || {}).value;
+        const episodio = (form.querySelector('[data-field="episodio"]') || {}).value;
+        if (!temporada || !episodio) return;
+        const statusEl = form.querySelector('[data-busca-episodio-status]');
+        try {
+            if (statusEl) { statusEl.textContent = 'Buscando título e duração do episódio…'; statusEl.hidden = false; }
+            const d = await window.LogZenFilmes.buscarDetalhesEpisodio(fonte, refId, temporada, episodio);
+            if (d) {
+                const tituloInput = form.querySelector('[data-field="episodioTitulo"]');
+                if (tituloInput && d.episodioTitulo) tituloInput.value = d.episodioTitulo;
+                const tempoInput = form.querySelector('[data-field="tempo"]');
+                if (tempoInput && d.tempo) tempoInput.value = d.tempo;
+            }
+            if (statusEl) statusEl.hidden = true;
+        } catch (err) {
+            if (statusEl) { statusEl.textContent = err.message; statusEl.hidden = false; }
+        }
+    }
+
     function wire(rootEl) {
         rootEl.addEventListener('click', async (e) => {
             const toggleBtn = e.target.closest('[data-action="toggle-add-filme"]');
@@ -809,6 +897,10 @@ window.LogZenFilmes = (function () {
                         tempo: d.tempo || '',
                         genero: d.genero || '',
                         premios: d.premios || '',
+                        // Guardado para buscar título/duração de episódios
+                        // depois, sem repetir a busca (issue #45).
+                        serieFonte: item.fonte,
+                        serieRefId: item.refId,
                         assistidoEm: window.LogZenData.todayKey(),
                         estrelas: 0,
                         opiniao: '',
@@ -933,6 +1025,26 @@ window.LogZenFilmes = (function () {
             if (tipoSelect) {
                 const campos = tipoSelect.closest('form').querySelector('[data-episodio-campos]');
                 if (campos) campos.hidden = tipoSelect.value !== 'series';
+                return;
+            }
+
+            // Temporada/episódio preenchidos — busca automática de título e
+            // duração do episódio (issue #45), tanto no formulário rápido de
+            // cada card de série quanto no formulário principal.
+            const epField = e.target.closest('[data-field="temporada"], [data-field="episodio"]');
+            if (epField) {
+                const addEpisodioForm = epField.closest('form[data-form-add-episodio-serie]');
+                if (addEpisodioForm) {
+                    const chave = addEpisodioForm.dataset.tituloChave;
+                    const grupo = window.LogZenFilmes.listarGruposSeries().find((g) => g.titulo.trim().toLowerCase() === chave);
+                    if (grupo) tentarBuscarEpisodio(addEpisodioForm, grupo.fonte, grupo.fonteId);
+                    return;
+                }
+                const rascunhoFormEl = epField.closest('form[data-form-rascunho]');
+                if (rascunhoFormEl && rascunho && rascunho.tipo === 'series') {
+                    tentarBuscarEpisodio(rascunhoFormEl, rascunho.serieFonte, rascunho.serieRefId);
+                    return;
+                }
                 return;
             }
             // Recalcula "já registrados" (issue #32) ao mudar o título de uma
