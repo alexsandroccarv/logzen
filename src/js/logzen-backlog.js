@@ -330,7 +330,7 @@ window.LogZenBacklog = (function () {
             const removerBtn = e.target.closest('[data-action="remover-backlog"]');
             if (removerBtn) {
                 const card = removerBtn.closest('[data-backlog-tarefa], [data-backlog-enviada]');
-                const acao = card.querySelector('p.font-semibold').textContent;
+                const acao = card.querySelector('p.font-medium').textContent;
                 if (!window.confirm(`Remover "${acao}" do backlog?`)) return;
                 window.LogZenBacklog.remover(card.dataset.id);
                 if (editandoId === card.dataset.id) editandoId = null;

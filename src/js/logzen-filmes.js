@@ -23,6 +23,15 @@
    Livros e Podcasts. Ao registrar/editar uma série, mostra as
    temporadas/episódios já registrados do mesmo título — ajuda a lembrar o
    que já foi visto e evitar duplicar (issue #32).
+
+   Séries separadas de Filmes em duas sub-abas (issue #43): em Séries, os
+   episódios de um mesmo título são agrupados num "card do show" (pôster/
+   ano/gênero de uma entrada de referência — de preferência a que tem
+   pôster) com a lista completa de episódios embaixo (nome, duração, data
+   assistida, estrelas), reaproveitando editar-filme/remover-filme por
+   episódio. Cada card ganha um formulário rápido para adicionar mais um
+   episódio sem buscar de novo. "Registrar vídeo" (busca/manual) continua
+   sendo o caminho para um filme novo ou o primeiro episódio de uma série.
    ========================================================================== */
 window.LogZenFilmes = (function () {
     const ENTRIES_KEY = 'logzen:filmes:v1';
@@ -88,6 +97,40 @@ window.LogZenFilmes = (function () {
         if (!item) return;
         Object.assign(item, dados);
         writeEntries(lista);
+    }
+
+    // Agrupa todas as entradas de série por título (sem diferenciar
+    // maiúsculas/minúsculas — issue #43), cada grupo trazendo os dados do
+    // show (pôster/ano/gênero — de preferência de uma entrada vinda de
+    // busca, que tem pôster; senão a mais recente) e a lista completa de
+    // episódios já registrados, ordenada por temporada/episódio. Usado
+    // para separar Séries de Filmes e mostrar o "card do show" com todos
+    // os episódios embaixo, em vez de uma dica de texto só.
+    function listarGruposSeries() {
+        const todas = readEntries().filter((e) => e.tipo === 'series');
+        const grupos = new Map();
+        todas.forEach((e) => {
+            const chave = String(e.titulo || '').trim().toLowerCase();
+            if (!chave) return;
+            if (!grupos.has(chave)) grupos.set(chave, []);
+            grupos.get(chave).push(e);
+        });
+        return Array.from(grupos.values()).map((episodios) => {
+            const ordenados = episodios.slice().sort((a, b) =>
+                (parseInt(a.temporada, 10) || 0) - (parseInt(b.temporada, 10) || 0)
+                || (parseInt(a.episodio, 10) || 0) - (parseInt(b.episodio, 10) || 0)
+                || (a.criadoEm || 0) - (b.criadoEm || 0));
+            const comPoster = episodios.find((e) => e.poster);
+            const referencia = comPoster || episodios.slice().sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0))[0];
+            return {
+                titulo: referencia.titulo, poster: referencia.poster, ano: referencia.ano,
+                genero: referencia.genero, episodios: ordenados,
+            };
+        }).sort((a, b) => {
+            const ua = Math.max(0, ...a.episodios.map((e) => e.criadoEm || 0));
+            const ub = Math.max(0, ...b.episodios.map((e) => e.criadoEm || 0));
+            return ub - ua;
+        });
     }
 
     function getApiKey() {
@@ -288,7 +331,7 @@ window.LogZenFilmes = (function () {
     }
 
     return {
-        listar, salvar, remover, obter, atualizar, listarEpisodios, getApiKey, setApiKey,
+        listar, salvar, remover, obter, atualizar, listarEpisodios, listarGruposSeries, getApiKey, setApiKey,
         getTmdbApiKey, setTmdbApiKey, getFontesOrdem, setFontesOrdem,
         getFontesHabilitadas, setFonteHabilitada,
         buscarPorTitulo, buscarDetalhesPorResultado, extrairYoutubeId, buscarYoutube,
@@ -317,6 +360,9 @@ window.LogZenFilmes = (function () {
     let rascunho = null;
     // id do registro em edição (null = rascunho é uma entrada nova).
     let editandoId = null;
+    // Sub-aba ativa dentro de Vídeos (issue #43) — só em memória, volta
+    // para "filmes" a cada visita/recarregamento.
+    let subTab = 'filmes';
 
     function estrelasBtns(valorAtual) {
         return Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `
@@ -490,7 +536,7 @@ window.LogZenFilmes = (function () {
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Minhas estrelas</label>
-                <div class="flex flex-wrap gap-1" data-estrelas>${estrelasBtns(rascunho.estrelas)}</div>
+                <div class="flex flex-wrap gap-1" data-estrelas data-valor="${rascunho.estrelas || 0}">${estrelasBtns(rascunho.estrelas)}</div>
             </div>
             <div>
                 <label class="block text-xs font-medium mb-1">Minha opinião</label>
@@ -577,13 +623,151 @@ window.LogZenFilmes = (function () {
         </div>`;
     }
 
-    function render() {
-        if (!root) return;
-        const entradas = window.LogZenFilmes.listar();
+    // Alterna entre "Filmes" (filmes, shows, palestras) e "Séries" —
+    // issue #43. Cada pílula troca o subTab e refaz a tela inteira; é um
+    // estado leve, sem custo re-renderizar tudo a cada clique.
+    function renderSubTabsHtml() {
+        const pill = (ativo) => ativo
+            ? 'bg-sage-600 dark:bg-sage-700 text-white'
+            : 'text-ink-400 hover:bg-paper-100 dark:hover:bg-paper-800';
+        return `
+        <div class="flex gap-2">
+            <button type="button" data-action="sub-tab" data-subtab="filmes" role="tab" aria-selected="${subTab === 'filmes'}"
+                class="px-3 py-1.5 rounded-full text-sm font-medium ${pill(subTab === 'filmes')}">
+                <i aria-hidden="true" class="fa-solid fa-film mr-1"></i> Filmes
+            </button>
+            <button type="button" data-action="sub-tab" data-subtab="series" role="tab" aria-selected="${subTab === 'series'}"
+                class="px-3 py-1.5 rounded-full text-sm font-medium ${pill(subTab === 'series')}">
+                <i aria-hidden="true" class="fa-solid fa-tv mr-1"></i> Séries
+            </button>
+        </div>`;
+    }
+
+    function renderFilmesSecao() {
+        const entradas = window.LogZenFilmes.listar().filter((e) => e.tipo !== 'series');
         const listaHtml = entradas.length
             ? entradas.map(renderEntrada).join('')
-            : '<p class="text-xs text-ink-400">Nenhum vídeo registrado ainda.</p>';
-        root.innerHTML = renderPainelAdicionar() + `<div data-filmes-lista class="space-y-3">${listaHtml}</div>`;
+            : '<p class="text-xs text-ink-400">Nenhum filme registrado ainda.</p>';
+        return `<div data-filmes-lista class="space-y-3 mt-3">${listaHtml}</div>`;
+    }
+
+    // Uma linha por episódio já registrado, dentro do card do show (issue
+    // #43) — reaproveita editar-filme/remover-filme (mesmos data-action e
+    // data-filme-entrada/data-id de sempre), então editar reabre o
+    // formulário completo (data assistida, estrelas, opinião) sem
+    // precisar de nenhuma lógica nova.
+    function renderEpisodioLinha(e) {
+        const temEstrelas = e.estrelas > 0;
+        const dataFmt = e.assistidoEm ? new Date(e.assistidoEm + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+        const detalhes = [e.tempo, dataFmt ? `assistido em ${dataFmt}` : ''].filter(Boolean).join(' · ');
+        return `
+        <div data-filme-entrada data-id="${e.id}" class="py-2.5 flex items-start justify-between gap-2">
+            <div class="min-w-0">
+                <p class="text-sm font-medium truncate">T${escapeHtml(e.temporada || '?')}E${escapeHtml(e.episodio || '?')}${e.episodioTitulo ? ': ' + escapeHtml(e.episodioTitulo) : ''}</p>
+                ${detalhes ? `<p class="text-xs text-ink-400">${escapeHtml(detalhes)}</p>` : ''}
+                ${temEstrelas ? `<p class="text-xs text-clay-600 dark:text-clay-400 mt-0.5"><i aria-hidden="true" class="fa-solid fa-star text-[10px] mr-0.5"></i>${e.estrelas}/10</p>` : ''}
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+                <button type="button" data-action="editar-filme" aria-label="Editar episódio T${escapeHtml(e.temporada || '?')}E${escapeHtml(e.episodio || '?')}"
+                    class="w-7 h-7 rounded-full text-ink-300 hover:text-sage-700 hover:bg-sage-50 dark:hover:bg-sage-900/40 flex items-center justify-center">
+                    <i aria-hidden="true" class="fa-solid fa-pen text-xs"></i>
+                </button>
+                <button type="button" data-action="remover-filme" aria-label="Remover episódio T${escapeHtml(e.temporada || '?')}E${escapeHtml(e.episodio || '?')}"
+                    class="w-7 h-7 rounded-full text-ink-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center">
+                    <i aria-hidden="true" class="fa-solid fa-trash text-xs"></i>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    // Formulário rápido para registrar mais um episódio assistido de uma
+    // série já cadastrada (issue #43) — sem precisar buscar de novo: os
+    // dados do show (título/pôster/ano/gênero) vêm do grupo, só pede o
+    // que muda por episódio.
+    function renderFormAddEpisodio(grupo) {
+        const chave = escapeHtml(grupo.titulo.trim().toLowerCase());
+        const hoje = window.LogZenData.todayKey();
+        return `
+        <div class="mt-3 pt-3 border-t border-paper-200 dark:border-paper-800">
+            <button type="button" data-action="toggle-add-episodio-serie" class="text-xs font-medium text-sage-700 dark:text-sage-400 hover:underline flex items-center gap-1">
+                <i aria-hidden="true" class="fa-solid fa-plus"></i> Adicionar episódio assistido
+            </button>
+            <form data-form-add-episodio-serie data-titulo-chave="${chave}" hidden class="space-y-3 pt-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Temporada</label>
+                        <input type="number" data-field="temporada" min="1" required
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Episódio</label>
+                        <input type="number" data-field="episodio" min="1" required
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium mb-1">Título do episódio (opcional)</label>
+                        <input type="text" data-field="episodioTitulo" maxlength="120"
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium mb-1">Duração (opcional)</label>
+                        <input type="text" data-field="tempo" maxlength="30" placeholder="ex.: 42 min"
+                            class="w-full px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Assistido em</label>
+                    <input type="date" data-field="assistidoEm" value="${hoje}" max="${hoje}"
+                        class="px-3 py-2 rounded-xl border border-paper-300 dark:border-paper-700 bg-white dark:bg-paper-800 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Minhas estrelas</label>
+                    <div class="flex flex-wrap gap-1" data-estrelas data-valor="0">${estrelasBtns(0)}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-sage-600 dark:bg-sage-700 text-white text-sm font-medium hover:bg-sage-700">Salvar episódio</button>
+                    <button type="button" data-action="cancelar-add-episodio-serie" class="px-3 py-1.5 rounded-xl border border-paper-300 dark:border-paper-700 text-sm hover:bg-paper-100 dark:hover:bg-paper-700">Cancelar</button>
+                </div>
+            </form>
+        </div>`;
+    }
+
+    // Card do show: pôster/ano/gênero + lista completa de episódios já
+    // registrados + formulário rápido para adicionar mais um (issue #43).
+    function renderGrupoSerie(grupo) {
+        const chave = escapeHtml(grupo.titulo.trim().toLowerCase());
+        const poster = grupo.poster
+            ? `<img src="${escapeHtml(grupo.poster)}" alt="" class="w-16 h-24 object-cover rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800">`
+            : `<div class="w-16 h-24 rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800 flex items-center justify-center text-ink-300"><i aria-hidden="true" class="fa-solid fa-tv text-xl"></i></div>`;
+        const detalhes = [grupo.ano, grupo.genero].filter(Boolean).join(' · ');
+        const total = grupo.episodios.length;
+        return `
+        <div data-grupo-serie data-titulo-chave="${chave}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-4">
+            <div class="flex gap-3">
+                ${poster}
+                <div class="min-w-0 flex-1">
+                    <p class="font-medium truncate">${escapeHtml(grupo.titulo)}</p>
+                    ${detalhes ? `<p class="text-xs text-ink-400">${escapeHtml(detalhes)}</p>` : ''}
+                    <p class="text-xs text-sage-700 dark:text-sage-400 mt-1">${total} episódio${total === 1 ? '' : 's'} registrado${total === 1 ? '' : 's'}</p>
+                </div>
+            </div>
+            <div class="mt-2 divide-y divide-paper-200 dark:divide-paper-800">
+                ${grupo.episodios.map(renderEpisodioLinha).join('')}
+            </div>
+            ${renderFormAddEpisodio(grupo)}
+        </div>`;
+    }
+
+    function renderSeriesSecao() {
+        const grupos = window.LogZenFilmes.listarGruposSeries();
+        if (!grupos.length) return '<p class="text-xs text-ink-400 mt-3">Nenhuma série registrada ainda.</p>';
+        return `<div data-series-lista class="space-y-4 mt-3">${grupos.map(renderGrupoSerie).join('')}</div>`;
+    }
+
+    function render() {
+        if (!root) return;
+        root.innerHTML = renderPainelAdicionar() + renderSubTabsHtml()
+            + (subTab === 'series' ? renderSeriesSecao() : renderFilmesSecao());
     }
 
     function wire(rootEl) {
@@ -666,14 +850,20 @@ window.LogZenFilmes = (function () {
                 return;
             }
 
+            // Genérico (não depende de `rascunho`): o valor escolhido fica em
+            // data-valor no próprio contêiner — tanto o rascunho principal
+            // quanto o formulário rápido de "adicionar episódio" (issue #43)
+            // usam o mesmo [data-estrelas], cada um lido no submit.
             const estrelaBtn = e.target.closest('[data-estrelas] button[data-action="estrela"]');
-            if (estrelaBtn && rascunho) {
-                const n = parseInt(estrelaBtn.dataset.n, 10);
-                rascunho.estrelas = rascunho.estrelas === n ? 0 : n;
+            if (estrelaBtn) {
                 const grupo = estrelaBtn.closest('[data-estrelas]');
+                const n = parseInt(estrelaBtn.dataset.n, 10);
+                const atual = parseInt(grupo.dataset.valor || '0', 10);
+                const novo = atual === n ? 0 : n;
+                grupo.dataset.valor = novo;
                 grupo.querySelectorAll('button[data-action="estrela"]').forEach((b) => {
                     const bn = parseInt(b.dataset.n, 10);
-                    const ativo = bn <= rascunho.estrelas;
+                    const ativo = bn <= novo;
                     b.setAttribute('aria-pressed', ativo);
                     b.classList.toggle('text-clay-600', ativo);
                     b.classList.toggle('dark:text-clay-400', ativo);
@@ -686,11 +876,42 @@ window.LogZenFilmes = (function () {
             const removerBtn = e.target.closest('[data-action="remover-filme"]');
             if (removerBtn) {
                 const card = removerBtn.closest('[data-filme-entrada]');
-                const titulo = card.querySelector('p.font-semibold').textContent;
+                const titulo = card.querySelector('p.font-medium').textContent;
                 if (!window.confirm(`Remover "${titulo}" da lista?`)) return;
                 window.LogZenFilmes.remover(card.dataset.id);
                 if (editandoId === card.dataset.id) { rascunho = null; editandoId = null; }
                 render();
+                return;
+            }
+
+            const subTabBtn = e.target.closest('[data-action="sub-tab"]');
+            if (subTabBtn) {
+                subTab = subTabBtn.dataset.subtab;
+                render();
+                return;
+            }
+
+            const toggleEpisodioBtn = e.target.closest('[data-action="toggle-add-episodio-serie"]');
+            if (toggleEpisodioBtn) {
+                const form = toggleEpisodioBtn.nextElementSibling;
+                form.hidden = !form.hidden;
+                return;
+            }
+
+            const cancelarEpisodioBtn = e.target.closest('[data-action="cancelar-add-episodio-serie"]');
+            if (cancelarEpisodioBtn) {
+                const form = cancelarEpisodioBtn.closest('form[data-form-add-episodio-serie]');
+                form.reset();
+                const estrelasEl = form.querySelector('[data-estrelas]');
+                if (estrelasEl) {
+                    estrelasEl.dataset.valor = '0';
+                    estrelasEl.querySelectorAll('button[data-action="estrela"]').forEach((b) => {
+                        b.setAttribute('aria-pressed', 'false');
+                        b.classList.remove('text-clay-600', 'dark:text-clay-400');
+                        b.classList.add('text-paper-300', 'dark:text-paper-700');
+                    });
+                }
+                form.hidden = true;
                 return;
             }
         });
@@ -792,6 +1013,8 @@ window.LogZenFilmes = (function () {
                     rascunho.tipo = rascunhoForm.querySelector('[data-field="tipo"]').value;
                 }
                 rascunho.assistidoEm = rascunhoForm.querySelector('[data-field="assistidoEm"]').value || window.LogZenData.todayKey();
+                const estrelasEl = rascunhoForm.querySelector('[data-estrelas]');
+                rascunho.estrelas = estrelasEl ? parseInt(estrelasEl.dataset.valor || '0', 10) : 0;
                 rascunho.opiniao = rascunhoForm.querySelector('[data-field="opiniao"]').value.trim();
                 rascunho.local = rascunhoForm.querySelector('[data-field="local"]').value;
                 if (rascunho.local === 'streaming') {
@@ -824,6 +1047,42 @@ window.LogZenFilmes = (function () {
                     window.LogZenFilmes.salvar(entrada);
                 }
                 rascunho = null;
+                render();
+                return;
+            }
+
+            // Adicionar mais um episódio a uma série já cadastrada, sem
+            // buscar de novo (issue #43) — dados do show vêm do grupo já
+            // agrupado por título; só pede o que muda por episódio.
+            const addEpisodioForm = e.target.closest('form[data-form-add-episodio-serie]');
+            if (addEpisodioForm) {
+                e.preventDefault();
+                const temporada = addEpisodioForm.querySelector('[data-field="temporada"]').value.trim();
+                const episodio = addEpisodioForm.querySelector('[data-field="episodio"]').value.trim();
+                if (!temporada || !episodio) return;
+                const chave = addEpisodioForm.dataset.tituloChave;
+                const grupo = window.LogZenFilmes.listarGruposSeries().find((g) => g.titulo.trim().toLowerCase() === chave);
+                if (!grupo) return;
+                const estrelasEl = addEpisodioForm.querySelector('[data-estrelas]');
+                const entrada = {
+                    id: gerarId(),
+                    criadoEm: Date.now(),
+                    tipo: 'series',
+                    titulo: grupo.titulo,
+                    poster: grupo.poster || '',
+                    ano: grupo.ano || '',
+                    genero: grupo.genero || '',
+                    premios: '',
+                    temporada,
+                    episodio,
+                    episodioTitulo: addEpisodioForm.querySelector('[data-field="episodioTitulo"]').value.trim(),
+                    tempo: addEpisodioForm.querySelector('[data-field="tempo"]').value.trim(),
+                    assistidoEm: addEpisodioForm.querySelector('[data-field="assistidoEm"]').value || window.LogZenData.todayKey(),
+                    estrelas: estrelasEl ? parseInt(estrelasEl.dataset.valor || '0', 10) : 0,
+                    opiniao: '',
+                    local: '', servico: '',
+                };
+                window.LogZenFilmes.salvar(entrada);
                 render();
             }
         });

@@ -8,12 +8,23 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Não lançado]
 
 ### Fixed
+- Backlog, Entregas, Vídeos, Livros e Podcasts: o botão "Remover" havia
+  parado de funcionar (seletor de título desatualizado após a identidade
+  visual "Sereno") — o clique não abria mais o diálogo de confirmação e
+  nada era removido (issue #44).
 - Tela "Hoje": "Metas" deixa de ficar numa coluna lateral empilhada
   verticalmente (o que estourava a página quando havia várias metas) e
   passa a ficar em uma linha, com os cartões lado a lado, logo abaixo de
   "Objetivos do dia" (issue #34).
 
 ### Changed
+- Vídeos: Séries agora ficam numa sub-aba separada de Filmes. Cada série
+  vira um "card" único (pôster, título, ano, gênero) com a lista completa
+  dos episódios já registrados logo abaixo — nome do episódio, duração,
+  data assistida e avaliação — e um formulário rápido para adicionar mais
+  um episódio (só temporada/episódio em diante) sem precisar buscar de
+  novo. "Registrar vídeo" continua sendo o caminho para um filme novo ou o
+  primeiro episódio de uma série (issue #43).
 - Navegação mobile first: no celular, a barra de abas passa a ficar fixa
   no rodapé (ícone + rótulo), no estilo de app nativo, em vez da barra
   horizontal no topo (mantida no desktop). O cabeçalho fica fixo ao

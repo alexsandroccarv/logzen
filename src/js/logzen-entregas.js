@@ -302,7 +302,7 @@ window.LogZenEntregas = (function () {
             const removerBtn = e.target.closest('[data-action="remover-entrega"]');
             if (removerBtn) {
                 const card = removerBtn.closest('[data-entrega-entrada], [data-entrega-arquivada]');
-                const nome = card.querySelector('p.font-semibold').textContent;
+                const nome = card.querySelector('p.font-medium').textContent;
                 if (!window.confirm(`Remover "${nome}" da lista?`)) return;
                 window.LogZenEntregas.remover(card.dataset.id);
                 if (editandoId === card.dataset.id) editandoId = null;

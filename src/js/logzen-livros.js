@@ -466,7 +466,7 @@ window.LogZenLivros = (function () {
             const removerBtn = e.target.closest('[data-action="remover-livro"]');
             if (removerBtn) {
                 const card = removerBtn.closest('[data-livro-entrada]');
-                const titulo = card.querySelector('p.font-semibold').textContent;
+                const titulo = card.querySelector('p.font-medium').textContent;
                 if (!window.confirm(`Remover "${titulo}" da lista?`)) return;
                 window.LogZenLivros.remover(card.dataset.id);
                 if (editandoId === card.dataset.id) { rascunho = null; editandoId = null; }

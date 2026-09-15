@@ -407,7 +407,7 @@ window.LogZenPodcasts = (function () {
             const removerPodcastBtn = e.target.closest('[data-action="remover-podcast"]');
             if (removerPodcastBtn) {
                 const card = removerPodcastBtn.closest('[data-podcast-card]');
-                const nome = card.querySelector('p.font-semibold').textContent;
+                const nome = card.querySelector('p.font-medium').textContent;
                 if (!window.confirm(`Remover a assinatura "${nome}"? Os episódios já registrados continuam guardados.`)) return;
                 window.LogZenPodcasts.removerPodcast(card.dataset.id);
                 if (editandoPodcastId === card.dataset.id) editandoPodcastId = null;
@@ -465,7 +465,7 @@ window.LogZenPodcasts = (function () {
             const removerEpisodioBtn = e.target.closest('[data-action="remover-episodio"]');
             if (removerEpisodioBtn) {
                 const card = removerEpisodioBtn.closest('[data-episodio-card]');
-                const titulo = card.querySelector('p.font-semibold').textContent;
+                const titulo = card.querySelector('p.font-medium').textContent;
                 if (!window.confirm(`Remover o episódio "${titulo}"?`)) return;
                 window.LogZenPodcasts.removerEpisodio(card.dataset.id);
                 if (editandoEpisodioId === card.dataset.id) editandoEpisodioId = null;
