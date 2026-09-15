@@ -18,6 +18,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   "Objetivos do dia" (issue #34).
 
 ### Changed
+- Vídeos: o card de cada série agora começa recolhido (só pôster, título,
+  ano/gênero e "N episódios registrados") — clicar no card expande e
+  mostra a lista completa de episódios e o formulário de adicionar, tudo
+  dentro do mesmo card. Evita que a sub-aba Séries fique muito longa
+  rápido com várias séries cadastradas (issue #46).
 - Vídeos: ao escolher a temporada e o episódio de uma série (formulário
   principal ou formulário rápido do card do show), o LogZen busca
   automaticamente título e duração do episódio na mesma fonte usada para

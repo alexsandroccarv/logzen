@@ -40,6 +40,12 @@
    duração do episódio direto na fonte e preenche os campos (continuam
    editáveis). Séries manuais (sem busca) não têm fonte conhecida, então
    nada é buscado — comportamento igual ao de antes.
+
+   Card de série recolhido por padrão (issue #46): só o resumo (pôster,
+   título, ano/gênero, contagem de episódios) fica sempre visível; a lista
+   completa de episódios e o formulário de adicionar continuam dentro do
+   mesmo card, só escondidos até o clique — senão a tela lota rápido com
+   várias séries cadastradas.
    ========================================================================== */
 window.LogZenFilmes = (function () {
     const ENTRIES_KEY = 'logzen:filmes:v1';
@@ -423,6 +429,13 @@ window.LogZenFilmes = (function () {
     // Sub-aba ativa dentro de Vídeos (issue #43) — só em memória, volta
     // para "filmes" a cada visita/recarregamento.
     let subTab = 'filmes';
+    // Cards de série expandidos (issue #46) — chave = título normalizado.
+    // Recolhido por padrão: com vários títulos, cada um listando todos os
+    // episódios já assistidos, a tela lotaria rápido. Guardado em memória
+    // (sobrevive a re-renders dentro da sessão, mas não a um recarregamento)
+    // para não fechar o card sozinho a cada ação (editar, remover, adicionar
+    // episódio).
+    const seriesExpandidas = new Set();
 
     function estrelasBtns(valorAtual) {
         return Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `
@@ -796,8 +809,14 @@ window.LogZenFilmes = (function () {
 
     // Card do show: pôster/ano/gênero + lista completa de episódios já
     // registrados + formulário rápido para adicionar mais um (issue #43).
+    // Recolhido por padrão (issue #46) — só o resumo fica sempre visível;
+    // a lista de episódios e o formulário de adicionar ficam escondidos
+    // dentro do próprio card até o usuário clicar para expandir, senão a
+    // tela lota rápido com várias séries cadastradas.
     function renderGrupoSerie(grupo) {
-        const chave = escapeHtml(grupo.titulo.trim().toLowerCase());
+        const chaveRaw = grupo.titulo.trim().toLowerCase();
+        const chave = escapeHtml(chaveRaw);
+        const expandido = seriesExpandidas.has(chaveRaw);
         const poster = grupo.poster
             ? `<img src="${escapeHtml(grupo.poster)}" alt="" class="w-16 h-24 object-cover rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800">`
             : `<div class="w-16 h-24 rounded-lg shrink-0 bg-paper-100 dark:bg-paper-800 flex items-center justify-center text-ink-300"><i aria-hidden="true" class="fa-solid fa-tv text-xl"></i></div>`;
@@ -805,18 +824,22 @@ window.LogZenFilmes = (function () {
         const total = grupo.episodios.length;
         return `
         <div data-grupo-serie data-titulo-chave="${chave}" class="rounded-2xl bg-paper-50 dark:bg-paper-700 shadow-sm p-4">
-            <div class="flex gap-3">
+            <button type="button" data-action="toggle-grupo-serie" aria-expanded="${expandido}"
+                class="w-full flex gap-3 text-left">
                 ${poster}
                 <div class="min-w-0 flex-1">
                     <p class="font-medium truncate">${escapeHtml(grupo.titulo)}</p>
                     ${detalhes ? `<p class="text-xs text-ink-400">${escapeHtml(detalhes)}</p>` : ''}
                     <p class="text-xs text-sage-700 dark:text-sage-400 mt-1">${total} episódio${total === 1 ? '' : 's'} registrado${total === 1 ? '' : 's'}</p>
                 </div>
+                <i aria-hidden="true" class="fa-solid ${expandido ? 'fa-chevron-up' : 'fa-chevron-down'} text-ink-300 text-xs self-center shrink-0"></i>
+            </button>
+            <div ${expandido ? '' : 'hidden'}>
+                <div class="mt-2 divide-y divide-paper-200 dark:divide-paper-800">
+                    ${grupo.episodios.map(renderEpisodioLinha).join('')}
+                </div>
+                ${renderFormAddEpisodio(grupo)}
             </div>
-            <div class="mt-2 divide-y divide-paper-200 dark:divide-paper-800">
-                ${grupo.episodios.map(renderEpisodioLinha).join('')}
-            </div>
-            ${renderFormAddEpisodio(grupo)}
         </div>`;
     }
 
@@ -979,6 +1002,18 @@ window.LogZenFilmes = (function () {
             const subTabBtn = e.target.closest('[data-action="sub-tab"]');
             if (subTabBtn) {
                 subTab = subTabBtn.dataset.subtab;
+                render();
+                return;
+            }
+
+            // Expande/recolhe o card do show (issue #46) — a lista de
+            // episódios e o formulário de adicionar ficam escondidos dentro
+            // do próprio card até o clique.
+            const toggleGrupoBtn = e.target.closest('[data-action="toggle-grupo-serie"]');
+            if (toggleGrupoBtn) {
+                const chave = toggleGrupoBtn.closest('[data-grupo-serie]').dataset.tituloChave;
+                if (seriesExpandidas.has(chave)) seriesExpandidas.delete(chave);
+                else seriesExpandidas.add(chave);
                 render();
                 return;
             }
