@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LogZen</title>
     <meta name="description" content="LogZen: registre hábitos, exercícios, humor e mais em segundos, com todos os dados salvos só no seu celular.">
 
@@ -60,7 +60,7 @@
 <body class="font-sans bg-paper-100 dark:bg-paper-800 text-ink-900 dark:text-ink-50 min-h-screen flex flex-col transition-colors duration-300">
 
     <!-- ============================ CABEÇALHO ============================ -->
-    <header class="bg-brand-600 dark:bg-gray-900 border-b border-brand-700 dark:border-gray-700 flex flex-col shadow-sm dark:shadow-lg z-20 shrink-0 transition-colors duration-300">
+    <header class="sticky top-0 pt-[env(safe-area-inset-top)] bg-brand-600 dark:bg-gray-900 border-b border-brand-700 dark:border-gray-700 flex flex-col shadow-sm dark:shadow-lg z-20 shrink-0 transition-colors duration-300">
         <div class="flex items-center justify-between px-4 py-3 bg-brand-600 dark:bg-gray-900 transition-colors duration-300">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded bg-white dark:bg-gradient-to-br dark:from-accent-600 dark:to-accent-900 flex items-center justify-center text-brand-600 dark:text-white font-bold transition-colors duration-300">
@@ -88,8 +88,10 @@
             </div>
         </div>
 
-        <!-- Abas de navegação: adicione/remova .tab-btn e o .tab-panel correspondente -->
-        <nav class="bg-paper-50 dark:bg-paper-700 border-t border-paper-200 dark:border-paper-800 px-2" role="tablist" aria-label="Seções">
+        <!-- Abas de navegação (desktop): adicione/remova .tab-btn e o .tab-panel
+             correspondente. Escondida no celular — lá a navegação é pela barra
+             fixa no rodapé (mobile first: ver <nav id="tabBarMobile"> abaixo). -->
+        <nav class="hidden lg:block bg-paper-50 dark:bg-paper-700 border-t border-paper-200 dark:border-paper-800 px-2" role="tablist" aria-label="Seções">
             <div class="max-w-5xl mx-auto flex gap-1 overflow-x-auto">
                 <button id="tab-hoje-btn" aria-controls="tab-hoje" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-ink-400 hover:text-sage-700 dark:hover:text-sage-400 whitespace-nowrap" role="tab" aria-selected="true" data-tab="hoje">
                     <i aria-hidden="true" class="fa-solid fa-calendar-day mr-1"></i> Hoje
@@ -113,9 +115,44 @@
         </nav>
     </header>
 
+    <!-- Barra de navegação inferior (mobile first): mesma lista de abas do
+         nav de cima, só que num layout vertical (ícone + rótulo) fixo no
+         rodapé, como um app nativo — só aparece abaixo de "lg". Os botões
+         usam a mesma classe .tab-btn e o mesmo data-tab, então
+         js/layout.js (genérico, não mexido aqui) liga os dois conjuntos
+         em uníssono sem nenhuma lógica nova. -->
+    <nav id="tabBarMobile" class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-paper-50 dark:bg-paper-700 border-t border-paper-200 dark:border-paper-800 pb-[env(safe-area-inset-bottom)]" role="tablist" aria-label="Seções">
+        <div class="grid grid-cols-6">
+            <button id="tab-hoje-btn-m" aria-controls="tab-hoje" class="tab-btn flex flex-col items-center justify-center gap-0.5 py-2 text-ink-400 hover:text-sage-700 dark:hover:text-sage-400" role="tab" aria-selected="true" data-tab="hoje">
+                <i aria-hidden="true" class="fa-solid fa-calendar-day text-base"></i>
+                <span class="text-[10px] font-medium leading-none">Hoje</span>
+            </button>
+            <button id="tab-backlog-btn-m" aria-controls="tab-backlog" class="tab-btn flex flex-col items-center justify-center gap-0.5 py-2 text-ink-400 hover:text-sage-700 dark:hover:text-sage-400" role="tab" aria-selected="false" data-tab="backlog">
+                <i aria-hidden="true" class="fa-solid fa-list-check text-base"></i>
+                <span class="text-[10px] font-medium leading-none">Backlog</span>
+            </button>
+            <button id="tab-entregas-btn-m" aria-controls="tab-entregas" class="tab-btn flex flex-col items-center justify-center gap-0.5 py-2 text-ink-400 hover:text-sage-700 dark:hover:text-sage-400" role="tab" aria-selected="false" data-tab="entregas">
+                <i aria-hidden="true" class="fa-solid fa-truck-fast text-base"></i>
+                <span class="text-[10px] font-medium leading-none">Entregas</span>
+            </button>
+            <button id="tab-filmes-btn-m" aria-controls="tab-filmes" class="tab-btn flex flex-col items-center justify-center gap-0.5 py-2 text-ink-400 hover:text-sage-700 dark:hover:text-sage-400" role="tab" aria-selected="false" data-tab="filmes">
+                <i aria-hidden="true" class="fa-solid fa-film text-base"></i>
+                <span class="text-[10px] font-medium leading-none">Vídeos</span>
+            </button>
+            <button id="tab-livros-btn-m" aria-controls="tab-livros" class="tab-btn flex flex-col items-center justify-center gap-0.5 py-2 text-ink-400 hover:text-sage-700 dark:hover:text-sage-400" role="tab" aria-selected="false" data-tab="livros">
+                <i aria-hidden="true" class="fa-solid fa-book text-base"></i>
+                <span class="text-[10px] font-medium leading-none">Livros</span>
+            </button>
+            <button id="tab-podcasts-btn-m" aria-controls="tab-podcasts" class="tab-btn flex flex-col items-center justify-center gap-0.5 py-2 text-ink-400 hover:text-sage-700 dark:hover:text-sage-400" role="tab" aria-selected="false" data-tab="podcasts">
+                <i aria-hidden="true" class="fa-solid fa-podcast text-base"></i>
+                <span class="text-[10px] font-medium leading-none">Podcasts</span>
+            </button>
+        </div>
+    </nav>
+
     <!-- ============================ CONTEÚDO ============================ -->
-    <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
-        <div id="tab-hoje" class="tab-panel" role="tabpanel" aria-labelledby="tab-hoje-btn" tabindex="0">
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 pt-4 pb-24 lg:py-6">
+        <div id="tab-hoje" class="tab-panel" role="tabpanel" aria-labelledby="tab-hoje-btn tab-hoje-btn-m" tabindex="0">
             <div class="max-w-2xl lg:max-w-6xl mx-auto space-y-5">
                 <div class="flex items-center justify-center lg:justify-start gap-2">
                     <button type="button" id="hojeDiaAnterior" aria-label="Dia anterior"
@@ -139,7 +176,7 @@
                 <div id="hojeRoot" class="space-y-5"></div>
             </div>
         </div>
-        <div id="tab-backlog" class="tab-panel" role="tabpanel" aria-labelledby="tab-backlog-btn" tabindex="0" hidden>
+        <div id="tab-backlog" class="tab-panel" role="tabpanel" aria-labelledby="tab-backlog-btn tab-backlog-btn-m" tabindex="0" hidden>
             <div class="max-w-2xl lg:max-w-6xl mx-auto space-y-4">
                 <h2 class="font-display text-lg font-medium">Backlog</h2>
                 <p class="text-sm text-ink-400">
@@ -151,7 +188,7 @@
                 <div id="backlogRoot" class="space-y-4"></div>
             </div>
         </div>
-        <div id="tab-entregas" class="tab-panel" role="tabpanel" aria-labelledby="tab-entregas-btn" tabindex="0" hidden>
+        <div id="tab-entregas" class="tab-panel" role="tabpanel" aria-labelledby="tab-entregas-btn tab-entregas-btn-m" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
                 <h2 class="font-display text-lg font-medium">Entregas</h2>
                 <p class="text-sm text-ink-400">
@@ -162,7 +199,7 @@
                 <div id="entregasRoot" class="space-y-4"></div>
             </div>
         </div>
-        <div id="tab-filmes" class="tab-panel" role="tabpanel" aria-labelledby="tab-filmes-btn" tabindex="0" hidden>
+        <div id="tab-filmes" class="tab-panel" role="tabpanel" aria-labelledby="tab-filmes-btn tab-filmes-btn-m" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
                 <h2 class="font-display text-lg font-medium">Vídeos</h2>
                 <p class="text-sm text-ink-400">
@@ -175,7 +212,7 @@
                 <div id="filmesRoot" class="space-y-4"></div>
             </div>
         </div>
-        <div id="tab-livros" class="tab-panel" role="tabpanel" aria-labelledby="tab-livros-btn" tabindex="0" hidden>
+        <div id="tab-livros" class="tab-panel" role="tabpanel" aria-labelledby="tab-livros-btn tab-livros-btn-m" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
                 <h2 class="font-display text-lg font-medium">Livros</h2>
                 <p class="text-sm text-ink-400">
@@ -189,7 +226,7 @@
                 <div id="livrosRoot" class="space-y-4"></div>
             </div>
         </div>
-        <div id="tab-podcasts" class="tab-panel" role="tabpanel" aria-labelledby="tab-podcasts-btn" tabindex="0" hidden>
+        <div id="tab-podcasts" class="tab-panel" role="tabpanel" aria-labelledby="tab-podcasts-btn tab-podcasts-btn-m" tabindex="0" hidden>
             <div class="max-w-2xl mx-auto space-y-4">
                 <h2 class="font-display text-lg font-medium">Podcasts</h2>
                 <p class="text-sm text-ink-400">
@@ -349,7 +386,7 @@
     </main>
 
     <!-- Área de notificações (toasts) -->
-    <div id="toasts" class="fixed bottom-16 right-4 z-50 flex flex-col gap-2" aria-live="polite"></div>
+    <div id="toasts" class="fixed bottom-20 lg:bottom-4 right-4 z-50 flex flex-col gap-2" aria-live="polite"></div>
 
     <!-- ============================ RODAPÉ ============================ -->
     <!-- Rodapé injetado por js/chrome.js (fonte única, igual às páginas de apoio). -->

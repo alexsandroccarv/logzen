@@ -14,6 +14,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   "Objetivos do dia" (issue #34).
 
 ### Changed
+- Navegação mobile first: no celular, a barra de abas passa a ficar fixa
+  no rodapé (ícone + rótulo), no estilo de app nativo, em vez da barra
+  horizontal no topo (mantida no desktop). O cabeçalho fica fixo ao
+  rolar (`sticky`), e tanto ele quanto a barra inferior respeitam a área
+  segura do aparelho (notch/home indicator). Configurações continua
+  acessível pela engrenagem no cabeçalho (issue #42).
 - Tela "Hoje": o cartão "Objetivos do dia" não tem mais um campo para
   digitar um objetivo novo direto ali — a entrada passa a ser sempre via
   Backlog → "Enviar para hoje" (issue #40). Em compensação, um objetivo

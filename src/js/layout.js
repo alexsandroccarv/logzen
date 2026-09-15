@@ -40,16 +40,24 @@
 
     function wireTabs() {
         const btns = $$('.tab-btn');
-        btns.forEach((b, i) => {
+        btns.forEach((b) => {
             b.addEventListener('click', () => switchTab(b.dataset.tab));
             // Navegação por teclado (setas/Home/End), esperada em um tablist.
+            // Considera só os botões visíveis no momento do evento — um
+            // projeto pode ter mais de um conjunto de .tab-btn no DOM ao
+            // mesmo tempo (ex.: nav de cima no desktop + barra fixa no
+            // rodapé no mobile, alternando por CSS), e um botão escondido
+            // (display:none) não pode receber foco.
             b.addEventListener('keydown', (e) => {
+                const visiveis = btns.filter((v) => v.offsetParent !== null);
+                const i = visiveis.indexOf(b);
+                if (i === -1) return;
                 let next = -1;
-                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % btns.length;
-                else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + btns.length) % btns.length;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % visiveis.length;
+                else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + visiveis.length) % visiveis.length;
                 else if (e.key === 'Home') next = 0;
-                else if (e.key === 'End') next = btns.length - 1;
-                if (next >= 0) { e.preventDefault(); switchTab(btns[next].dataset.tab, { focus: true }); }
+                else if (e.key === 'End') next = visiveis.length - 1;
+                if (next >= 0) { e.preventDefault(); switchTab(visiveis[next].dataset.tab, { focus: true }); }
             });
         });
         const initial = $('.tab-btn[aria-selected="true"]') || btns[0];
